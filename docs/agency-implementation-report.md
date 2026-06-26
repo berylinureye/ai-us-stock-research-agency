@@ -62,6 +62,7 @@
 | `finviz` | 美股 screener、估值、技术字段、insider、news |
 | `tradingview` | scanner、技术指标、symbol search、news headline、delayed market data |
 | `yahoo-finance` | quotes、historicals、fundamentals、options、news 的免费交叉验证 |
+| `global-stock-data` | 已安装；零鉴权美股/港股 quote、K-line、技术指标、基本面、SEC filing 和全市场列表交叉验证 |
 
 ### 2.3 基本面
 
@@ -74,6 +75,7 @@
 | `longbridge-value-investing` | Graham/Buffett 式质量、护城河、安全边际检查 |
 | `sec-data` | SEC EDGAR / XBRL 原始财务数据 |
 | `earningswhispers` | 财报电话会、earnings metadata 辅助 |
+| `global-stock-data` | quote、K-line、基本面、SEC filing 备份验证；不能作为重大财务结论唯一来源 |
 | `alpha-vantage` | API key 可用时补充 fundamentals / technical / market data |
 | `finnhub` | API key 可用时补充 quote、profile、peers、earnings、metrics、news |
 
@@ -86,6 +88,7 @@
 | `longbridge-market-data` | OHLCV、K-line、成交量、价格数据 |
 | `tradingview` | scanner 和技术指标 |
 | `yahoo-finance` | OHLCV 与历史价格交叉验证 |
+| `global-stock-data` | MA/MACD/RSI/KDJ/布林带和 K-line 交叉验证 |
 | `cboe-data` | VIX、CBOE 指数、期权、波动率上下文 |
 | `fred-macro` | 利率、treasury、VIX、宏观时间序列 |
 
@@ -104,7 +107,8 @@
 |---|---|---|
 | ClawHub `transcriptapi` | Reject / Duplicate | `youtube-full` 已经是 TranscriptAPI-backed YouTube skill，配置 `TRANSCRIPT_API_KEY` 即可；重复安装会增加调用混乱 |
 | InvestSkill | Watch | 它是很好的美股分析框架，但默认 BUY/HOLD/SELL 需要二次改造成研究型 action rating，并禁止目标价、仓位、下单和账户动作 |
-| OpenClaw `finance-data` | Watch | 和 `financial-data-collector` + `yahoo-finance` + `sec-data` 重复，暂不增加复杂度 |
+| `simonlin1212/global-stock-data` | Installed | 932 stars / 157 forks / 0 open issues；README/SKILL 清楚，零鉴权只读数据源，补充行情、K-line、技术指标、基本面和 SEC filing 备份验证 |
+| OpenClaw `finance-data` | Watch | 和 `financial-data-collector` + `yahoo-finance` + `sec-data` + `global-stock-data` 重复，暂不增加复杂度 |
 | `alpha-skills` momentum / breadth / bubble detector | Watch | 有市场状态价值，但交易色彩更重，部分 repo 热度未达到当前 Skill Scout benchmark |
 | broker / portfolio / auto-trader skills | Reject | 会引入下单、账户、仓位、自动交易风险 |
 
@@ -292,16 +296,16 @@ RSS / YouTube / Podcasts / last30days / GitHub / arXiv / market intel
 优点：
 
 - 数据节点状态表和 partial/fail 机制很好，适合未来做自动化。
-- Skill Scout 独立于投资结论，可以防止系统随意扩张。
+- Skill Scout 独立于投资结论；低风险自动安装只用于补齐系统能力，不能直接改变投资结论。
 
 需要注意：
 
-- 目前还不是量化交易系统，不能输出策略和仓位。
+- 目前还不是量化交易系统，不能输出自动策略、仓位比例或账户动作；可以输出研究型 action rating、置信度、预估涨幅区间、观察/持有时间窗口和止盈/回避倾向。
 - 如果未来要加入因子或回测，必须单独建立 research sandbox，不能和当前 weekly brief 混在一起。
 
 已迭代：
 
-- 明确拒绝 broker / auto-trader / position sizing 类 skills。
+- 明确拒绝 broker / auto-trader / position sizing 类 skills，同时允许低风险只读数据/reasoning skills 自动安装。
 - 把 market regime 只作为上下文，不让它替代公司证据。
 
 ### 7.4 投资大佬视角

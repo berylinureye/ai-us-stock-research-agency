@@ -51,11 +51,11 @@ The current stack is research-only and focused on US-listed equities.
 |---|---|---|
 | Intent routing | Installed-skill inventory plus `docs/skill-registry.md` | User intent classification, agent path selection, data-node plan, missing configuration, safety boundary check |
 | AI information and sentiment | `last30days`, `youtube-full`, `bibi`, `ak-rss-digest`, `transcript-polisher` | Podcast, video, RSS, community sentiment, transcript cleanup. `youtube-full` is TranscriptAPI-backed and should use `TRANSCRIPT_API_KEY`; do not install duplicate ClawHub `transcriptapi` unless replacing it. |
-| Market data and catalysts | `longbridge`, `longbridge-market-data`, `longbridge-intel`, `nasdaq-data`, `finviz`, `tradingview`, `yahoo-finance` | Quotes, K-line, market attention, screener, news/catalyst context |
-| Fundamentals | `financial-data-collector`, `longbridge-fundamentals`, `longbridge-earnings`, `longbridge-research`, `longbridge-value-investing`, `sec-data`, `nasdaq-data`, `earningswhispers`, `yahoo-finance`, `finviz`, `alpha-vantage`, `finnhub` | Financial statements, SEC filings, earnings, estimates, valuation, company research |
-| Technicals and market regime | `technical-analyst`, `longbridge-technical`, `longbridge-market-data`, `tradingview`, `yahoo-finance`, `cboe-data`, `fred-macro`, `finviz` | Chart-first technical analysis, volatility context, rates/macro context |
+| Market data and catalysts | `longbridge`, `longbridge-market-data`, `longbridge-intel`, `nasdaq-data`, `finviz`, `tradingview`, `yahoo-finance`, `global-stock-data` | Quotes, K-line, market attention, screener, news/catalyst context, zero-auth backup data |
+| Fundamentals | `financial-data-collector`, `longbridge-fundamentals`, `longbridge-earnings`, `longbridge-research`, `longbridge-value-investing`, `sec-data`, `nasdaq-data`, `earningswhispers`, `yahoo-finance`, `finviz`, `global-stock-data`, `alpha-vantage`, `finnhub` | Financial statements, SEC filings, earnings, estimates, valuation, company research |
+| Technicals and market regime | `technical-analyst`, `longbridge-technical`, `longbridge-market-data`, `tradingview`, `yahoo-finance`, `global-stock-data`, `cboe-data`, `fred-macro`, `finviz` | Chart-first technical analysis, volatility context, rates/macro context |
 | Reflection | `cathie-wood-perspective`, `buffett-perspective` | Perspective debate over upstream evidence |
-| Paper feedback loop | `longbridge-market-data`, `yahoo-finance`, `tradingview`, `cboe-data`, `fred-macro` | Shadow-ledger price tracking, benchmark comparison, attribution |
+| Paper feedback loop | `longbridge-market-data`, `yahoo-finance`, `tradingview`, `global-stock-data`, `cboe-data`, `fred-macro` | Shadow-ledger price tracking, benchmark comparison, attribution |
 
 Out of scope: broker trading, account actions, portfolio rebalancing, position sizing, order execution, and auto-trading.
 
@@ -221,22 +221,23 @@ Output:
 - Downgraded stories.
 - Investment impact map.
 - Risks,反证条件, and next-week checks.
-- Research action rating: Research Buy / Hold-Watch / Avoid-Sell Bias / No Rating.
+- Research action rating: Research Buy / Hold-Watch / Take-Profit / Trim Bias / Avoid-Sell Bias / No Rating.
 
 Rule: this is the final synthesis layer. It should not behave like another raw data collector, evidence dump, or process audit.
 
 Output boundary:
 - The published report begins with a conclusion-first Boss Decision Page. The Intent Route Plan is generated first internally but appears later as an appendix.
 - The first page states the main judgment, first-tier/second-tier/observation/excluded candidates, highest-conviction evidence, largest falsification risk, and next-week validation.
+- The main report uses two-hop evidence linking: candidate row -> sibling evidence subfile -> original source links.
 - The final synthesis may output research action ratings with 0-100 confidence. Only `Research Buy` candidates with confidence >=75 and no major Reflection break can enter the Top 5 Research Action Pool.
 - Data-node status, tool failures, route details, and quality checklists are required but must be placed after the main conclusion and core evidence chain as appendices.
-- High-conviction claims need 2-3 hard evidence points. Weakly supported stories must be downgraded, deferred, or excluded.
+- High-conviction claims need 2-3 hard evidence summaries plus an `Evidence Pack` link to `reports/{report_slug}.evidence.md`. Weakly supported stories must be downgraded, deferred, or excluded.
 
 ### Maintenance Agent: Skill Scout
 
-Purpose: review new GitHub skills weekly and recommend add-on capabilities for this system.
+Purpose: review new GitHub skills weekly and recommend or low-risk auto-install add-on capabilities for this system.
 
-This agent does not install skills automatically. It only recommends.
+The user has approved low-risk auto-installation for read-only data-input and reasoning-lens skills that pass benchmarks and internal review. It must not install broker, order execution, account access, position-sizing, credential-reading, or opaque installer skills.
 
 ## Input Node Configuration
 
@@ -353,13 +354,13 @@ Recommended output:
 ```markdown
 ## Suggested Add-On Features
 
-| Candidate | Adds What | Benchmark Hit | Relevant Agent | Risk | Recommendation |
-|---|---|---|---|---|---|
-| skill-name | RSS / GitHub / arXiv / finance / charting | stars/forks/activity/listing | Agent 1/2/3/4/5 | Low/Medium/High | Install / Watch / Reject |
+| Candidate | Adds What | Benchmark Hit | Relevant Agent | Risk | Recommendation | Install Status | Install Path |
+|---|---|---|---|---|---|---|---|
+| skill-name | RSS / GitHub / arXiv / finance / charting | stars/forks/activity/listing | Agent 1/2/3/4/5 | Low/Medium/High | Install / Watch / Reject | installed / not installed / failed | path or n/a |
 ```
 
 Default recommendation policy:
-- Install: clear utility, benchmark hit, low risk.
+- Install: clear utility, benchmark hit, low risk; auto-install only read-only data-input or reasoning-lens skills and log evidence.
 - Watch: useful but duplicate, immature, or medium risk.
 - Reject: irrelevant, unsafe, overbroad, or low signal.
 
@@ -392,6 +393,7 @@ Before a final weekly brief is considered complete, it must check:
 - Intent routing: route type, selected/skipped agents, skill plan, and missing inputs are explicit.
 - Format completeness: includes AI technology news, AI academic papers, AI open-source projects, and AI information/sentiment evidence.
 - Executive readability: starts with the Boss Decision Page, not the Intent Route Plan, process status, or raw evidence tables.
+- Evidence auditability: every Top 5 / core candidate has an Evidence Pack link to a sibling evidence subfile, and that subfile links to original sources.
 - Actionability: includes research action ratings, confidence scores, and Top 5 eligibility without giving order execution, position sizing, or account instructions.
 - Language style: professional, concise, and similar to a technology intelligence brief.
 - Quantity requirements: at least 10 news items, 5 papers, 5 projects, and 5 high-signal sentiment evidence items.

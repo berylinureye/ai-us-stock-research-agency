@@ -34,12 +34,13 @@
 - `earningswhispers`：财报电话会和 earnings metadata 辅助。
 - `yahoo-finance`：行情、历史价格、财务、options、news 的免费交叉验证。
 - `finviz`：美股 screener、估值、技术、insider、news 的辅助检查。
+- `global-stock-data`：零鉴权美股/港股 quote、K-line、基本面、SEC filing 和全市场列表交叉验证；不能作为重大财务结论的唯一来源。
 
 条件使用：
 - `alpha-vantage`：仅在 API key 可用时使用。
 - `finnhub`：仅在 API key 可用且免费端点覆盖所需数据时使用。
 
-数据源冲突时，优先级为：SEC/公司文件 > 公司 earnings call / investor presentation > Longbridge / Nasdaq / structured financial collector > Yahoo/Finviz/Finnhub/Alpha Vantage 辅助数据。冲突必须显式记录，不要平均或静默选择。
+数据源冲突时，优先级为：SEC/公司文件 > 公司 earnings call / investor presentation > Longbridge / Nasdaq / structured financial collector > Yahoo/Finviz/global-stock-data/Finnhub/Alpha Vantage 辅助数据。冲突必须显式记录，不要平均或静默选择。
 
 ### 思维规则
 

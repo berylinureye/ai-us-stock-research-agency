@@ -253,7 +253,11 @@ Prompt：[agents/01-ai-trend-narrative-analyst.md](../agents/01-ai-trend-narrati
 
 - 老板决策页。
 - Top 5 Research Action Pool。
+- 预估涨幅区间。
+- 预计观察/持有周期。
+- 卖出/止盈规则。
 - 核心判断与硬证据表。
+- Evidence Pack 链接与同名证据子文件。
 - 按证据强度分层的研究排序。
 - 本周结论。
 - 当前观察到的 AI 趋势故事。
@@ -261,15 +265,16 @@ Prompt：[agents/01-ai-trend-narrative-analyst.md](../agents/01-ai-trend-narrati
 - 结论矩阵。
 - 投资影响地图。
 - 风险和反证。
-- 研究型 action rating：Research Buy / Hold-Watch / Avoid-Sell Bias / No Rating。
+- 研究型 action rating：Research Buy / Hold-Watch / Take-Profit / Trim Bias / Avoid-Sell Bias / No Rating。
 
 边界：
 
 - 这是内部投资研究老板看的最终结论稿，不是流程审计或资料仓库。
 - 必须结论先行；发布报告不得把 Intent Route Plan、运行边界、数据节点状态、工具失败、质量检查放在主结论之前。
 - 第一屏必须给出主结论、第一梯队/第二梯队/观察层/暂不纳入主线、最大证伪风险和下周验证。
-- 每个高置信度判断必须配 2-3 条最硬证据，长表格和过程细节后置。
+- 每个高置信度判断必须配 2-3 条最硬证据摘要和 Evidence Pack 链接，长表格、过程细节和原始来源必须写入同名证据子文件 `reports/{report_slug}.evidence.md`。
 - 只有置信度 >=75 且没有重大 Reflection 断裂的 `Research Buy` 可以进入 Top 5 Research Action Pool。
+- Top 5 必须包含预估涨幅区间、预计观察/持有周期、卖出/止盈规则和下周五复盘检查。
 - 不直接抓原始数据，除非上游缺失关键上下文。
 - 长期远演必须标注为场景推演或观察清单。
 - 可以输出研究型买卖倾向和置信度；不输出目标价、仓位、下单或账户动作。
@@ -283,7 +288,11 @@ Prompt：[agents/07-paper-portfolio-attribution-agent.md](../agents/07-paper-por
 它解决的问题：
 
 - 如果系统上周认为某个候选值得观察，下周价格是否按预期反应。
+- 用户在结论池里实际选择了哪些标的。
+- 周一假设买入、周五复盘是否完成。
+- 实际收益是否符合预估涨幅区间。
 - 如果不一致，错在哪里。
+- 是否触发 Hold-Watch、Take-Profit / Trim Bias 或 Avoid-Sell Bias。
 - 将市场反馈转成下一周的 signal weight 更新。
 
 默认模式：
@@ -291,13 +300,15 @@ Prompt：[agents/07-paper-portfolio-attribution-agent.md](../agents/07-paper-por
 - `shadow_ledger`。
 - 不连接 broker。
 - 不下单。
-- 只记录假设 entry/exit close price。
+- 只记录假设 Monday entry / Friday review close price。
 
 输出：
 
 - Open Observation Ledger。
+- Conclusion Pool Updates。
 - Closed Observation Performance。
 - Expected vs Actual。
+- Sell / Hold Review。
 - Attribution。
 - Signal Weight Updates。
 
@@ -312,7 +323,7 @@ Prompt：[agents/07-paper-portfolio-attribution-agent.md](../agents/07-paper-por
 
 Prompt：[agents/06-skill-scout.md](../agents/06-skill-scout.md)
 
-定位：系统能力升级建议层。
+定位：系统能力升级建议和低风险自动安装层。
 
 它解决的问题：
 
@@ -333,10 +344,12 @@ Prompt：[agents/06-skill-scout.md](../agents/06-skill-scout.md)
 - 建议观察。
 - 建议拒绝。
 - benchmark、内部审查、风险说明。
+- 对自动安装项记录 installed / failed 状态、安装路径和安装证据。
 
 边界：
 
-- 不自动安装。
+- 允许低风险自动安装，但只限通过 benchmark 和内部审查的 read-only 数据输入或 reasoning-lens skills。
+- 不自动安装 broker、order execution、account access、position-sizing、credential-reading 或 opaque installer 工具。
 - 不参与投资结论。
 - 不推荐自动交易或账户控制工具。
 
@@ -348,7 +361,8 @@ Prompt：[agents/06-skill-scout.md](../agents/06-skill-scout.md)
 2. 给 Stock Discovery 一个主题和市场边界，例如：`AI inference demand, hyperscaler capex, semiconductor supply chain`，但不强行给固定股票池。
 3. 让 Stock Discovery 自己发现 raw candidates，并生成最多 8 个 active candidates。
 4. 后续 agent 只研究这 8 个候选。
-5. Final Trend Narrative 选 3-5 个进入 shadow ledger。
-6. 下周用 Paper Portfolio & Attribution 做价格回看和归因。
+5. Final Trend Narrative 输出 Top 5 Research Action Pool、预估涨幅区间、预计观察/持有周期和卖出/止盈规则。
+6. 用户选择的标的进入 Conclusion Pool。
+7. 下周一按 close 做假设买入，下周五用 Paper Portfolio & Attribution 做价格回看和归因。
 
 这个闭环跑通后，再做 UI 会更有价值。

@@ -2,7 +2,7 @@
 
 这是一个面向 AI 产业趋势和美股投资研究的多 Agent 工作流。
 
-它不会自动交易，不会下单，不会给仓位建议。它可以在最终结论里给出研究型买卖倾向和置信度，用于 Top 5 观察池和下周归因。它的目标是每周把 AI 科技新闻、播客、舆情、GitHub、论文、美股基本面和技术面数据组织成一份可审查的研究报告。
+它不会自动交易，不会下单，不会给仓位建议。它可以在最终结论里给出研究型买卖倾向和置信度，用于 Top 5 观察池和下周归因。这里的“持仓范围”指研究观察/持有时间窗口，不是仓位比例。它的目标是每周把 AI 科技新闻、播客、舆情、GitHub、论文、美股基本面和技术面数据组织成一份可审查的研究报告。
 
 ## 核心链路
 
@@ -29,7 +29,7 @@ flowchart TD
     K -. "suggested system upgrades" .-> S
 ```
 
-核心节奏：先由 Intent Router 判断本次该跑全链路还是单点分析，再控噪生成候选池，之后做信息/基本面/技术面验证。Reflection 审闭环，最终结论进入 shadow ledger，下周再用价格和 benchmark 做归因。
+核心节奏：先由 Intent Router 判断本次该跑全链路还是单点分析，再控噪生成候选池，之后做信息/基本面/技术面验证。Reflection 审闭环，最终结论进入 Conclusion Pool 和 shadow ledger，下周再用价格和 benchmark 做归因。
 
 ## 关键理念
 
@@ -42,7 +42,10 @@ flowchart TD
 - 长期远演可以大胆，但必须标注事实、推断和长期假设。
 - Stock Discovery 负责控噪，每周默认最多 8 个 active candidates。
 - Paper Portfolio & Attribution 用 shadow ledger 做研究反馈，不连接真实账户、不下单。
-- 最终报告可以输出研究型 `Research Buy / Hold-Watch / Avoid-Sell Bias / No Rating`，但不输出目标价、仓位、下单或自动交易动作。
+- 最终报告可以输出研究型 `Research Buy / Hold-Watch / Take-Profit / Trim Bias / Avoid-Sell Bias / No Rating`，但不输出目标价、仓位比例、下单或自动交易动作。
+- 结论池记录用户每天实际选择观察的股票；默认周五分析、下周一假设买入、下周五复盘。
+- Top 5 必须包含预估涨幅区间、预计观察/持有周期和卖出/止盈规则。
+- Skill Scout 已授权低风险自动安装：仅限满足 benchmark、README/SKILL 可审、且无交易/账户/隐私权限的只读数据或 reasoning skills；安装记录必须写入维护附录。
 
 ## Agent 双链接索引
 
@@ -56,7 +59,7 @@ flowchart TD
 | Reflection Judge | [Prompt](agents/05-reflection-judge.md) | [Docs](docs/agent-responsibilities.md#4-reflection-judge) | 闭环审查、Wood vs Buffett 辩论 |
 | AI Trend Narrative Analyst | [Prompt](agents/01-ai-trend-narrative-analyst.md) | [Docs](docs/agent-responsibilities.md#5-ai-trend-narrative-analyst) | 最终 AI 趋势投资研究结论 |
 | Paper Portfolio & Attribution | [Prompt](agents/07-paper-portfolio-attribution-agent.md) | [Docs](docs/agent-responsibilities.md#6-paper-portfolio--attribution-agent) | 模拟观察账本、下周表现回看、归因和信号权重迭代 |
-| Skill Scout | [Prompt](agents/06-skill-scout.md) | [Docs](docs/agent-responsibilities.md#7-skill-scout) | 每周 GitHub skills / plugins 升级建议 |
+| Skill Scout | [Prompt](agents/06-skill-scout.md) | [Docs](docs/agent-responsibilities.md#7-skill-scout) | 每周 GitHub skills / plugins 升级建议和低风险自动安装 |
 
 ## 当前已安装 Skill Scopes
 
@@ -84,6 +87,7 @@ flowchart TD
 - `finviz`
 - `tradingview`
 - `yahoo-finance`
+- `global-stock-data`：零鉴权美股/港股行情、K 线、技术指标、基本面、SEC filing 和全市场列表交叉验证；作为冗余只读数据源使用
 
 ### 基本面
 
@@ -97,6 +101,7 @@ flowchart TD
 - `earningswhispers`
 - `yahoo-finance`
 - `finviz`
+- `global-stock-data`
 - `alpha-vantage`
 - `finnhub`
 
@@ -107,6 +112,7 @@ flowchart TD
 - `longbridge-market-data`
 - `tradingview`
 - `yahoo-finance`
+- `global-stock-data`
 - `cboe-data`
 - `fred-macro`
 - `finviz`
@@ -191,7 +197,20 @@ Paper feedback 默认使用 `PAPER_TRADING_MODE=shadow_ledger`，不连接 broke
 
 最终发布报告必须先输出给内部投资研究老板看的老板决策页：主结论、Top 5 Research Action Pool、研究动作、最硬证据、最大证伪风险和下周验证。Intent Route Plan、运行边界、数据节点状态、工具失败和质量检查必须后置到附录。
 
-最终结论必须给每个核心候选一个研究型 action rating 和 0-100 置信度。默认只有置信度 `>=75` 且信息/基本面/技术面/Reflection 没有重大断裂的标的，才能进入 Top 5 Research Action Pool。这个池只进入 shadow ledger 和下周归因，不代表真实下单。
+主报告必须使用双跳证据链接：每个 Top 5 / 核心候选在主报告里只保留证据摘要和 `Evidence Pack` 链接；完整证据链写入同名子文件 `reports/{report_slug}.evidence.md`，再由子文件链接到官方披露、SEC、IR、新闻、论文、GitHub、transcript 或社区讨论原始来源。
+
+最终结论必须给每个核心候选一个研究型 action rating 和 0-100 置信度。默认只有置信度 `>=75` 且信息/基本面/技术面/Reflection 没有重大断裂的标的，才能进入 Top 5 Research Action Pool。每个 Top 5 候选必须包含预估涨幅区间、预计观察/持有周期和卖出/止盈规则。这个池只进入 Conclusion Pool、shadow ledger 和下周归因，不代表真实下单。
+
+默认闭环：
+
+```text
+Friday final report
+  -> Conclusion Pool records user-selected candidates
+  -> next Monday close hypothetical entry
+  -> next Friday close review
+  -> expected upside vs actual return attribution
+  -> sell / trim / hold review
+```
 
 ## 质量门槛
 
@@ -199,8 +218,11 @@ Paper feedback 默认使用 `PAPER_TRADING_MODE=shadow_ledger`，不连接 broke
 
 - 老板决策页，且位于发布报告最前面。
 - 核心判断与 2-3 条硬证据。
+- 每个 Top 5 / 核心候选的 `Evidence Pack` 链接。
+- 同名证据子文件 `reports/{report_slug}.evidence.md`。
 - 按证据强度分层的研究排序。
 - Top 5 Research Action Pool：研究型买卖倾向、置信度、进入理由、失效条件。
+- 结论池：记录用户选择、下周一假设买入、下周五复盘、预估涨幅区间、持有周期和卖出/止盈规则。
 - 10 条 AI 技术新闻。
 - 5 篇 AI 学术论文。
 - 5 个 AI 开源项目。
@@ -225,13 +247,16 @@ Paper feedback 默认使用 `PAPER_TRADING_MODE=shadow_ledger`，不连接 broke
 - [docs/weekly-brief-quality-gate.md](docs/weekly-brief-quality-gate.md)：质量门槛。
 - [docs/agent-responsibilities.md](docs/agent-responsibilities.md)：每个 agent 的职责、输入、输出和边界。
 - [docs/skill-registry.md](docs/skill-registry.md)：每个 skill/data node 的用途、归属 agent、API、降级和禁止用途。
+- [docs/skill-scout-install-log.md](docs/skill-scout-install-log.md)：Skill Scout 自动安装和拒绝候选的证据日志。
 - [docs/api-configuration.md](docs/api-configuration.md)：API 和模型配置说明。
 - [docs/noise-control-and-paper-portfolio-loop.md](docs/noise-control-and-paper-portfolio-loop.md)：噪音控制和模拟观察闭环。
+- [data/conclusion-pool/README.md](data/conclusion-pool/README.md)：结论池和周五/周一/周五复盘协议。
+- [docs/weekly-reminder.md](docs/weekly-reminder.md)：本机周五提醒和复盘节奏。
 - [docs/next-experiment-and-ui-roadmap.md](docs/next-experiment-and-ui-roadmap.md)：下一步实验计划、Stock Discovery scales/API、UI 路线图。
 - [docs/agency-implementation-report.md](docs/agency-implementation-report.md)：实施报告与资深研究视角把关。
 
 ## 状态
 
-当前版本：`v0.3-intent-router`
+当前版本：`v0.4-research-action-pool`
 
-当前重点：先用 Intent Router 生成 Route Plan，再跑一次最小实验，验证 Stock Discovery 候选池、主研究链路、Paper Portfolio & Attribution 反馈闭环是否可用。
+当前重点：先用 Intent Router 生成 Route Plan，再跑一次最小实验，验证 Stock Discovery 候选池、Top 5 Research Action Pool、Conclusion Pool 和 Paper Portfolio & Attribution 反馈闭环是否可用。

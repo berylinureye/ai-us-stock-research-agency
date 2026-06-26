@@ -16,11 +16,12 @@ When adding or changing agent prompts:
 - Separate current observed stories from long-horizon projections. Long-horizon projections must label fact, inference, and hypothesis.
 - Prefer Chinese output for reports, unless a task explicitly asks for English.
 - Final weekly briefs must pass the quality gate in `docs/weekly-brief-quality-gate.md`.
+- Published reports must use two-hop evidence linking: main report rows link to a sibling evidence subfile, and the evidence subfile links to original sources. Keep long evidence tables out of the Boss Decision Page.
 - The required source modules are AI technology news, AI academic papers, AI open-source projects, and high-signal AI information/sentiment evidence.
 - The core research flow is a directed section pipeline: Intent Router -> Stock Discovery -> AI Information & Sentiment Section -> Fundamental Section -> Technical Section -> Reflection Section -> Final AI Trend Narrative Conclusion.
 - Stock Discovery runs before the main research sections and must cap active candidates at 8 by default.
 - Paper Portfolio & Attribution runs after final conclusions as a shadow-ledger feedback loop. It must not connect to live trading or place orders.
-- Skill Scout is a maintenance agent for suggested add-on capabilities, not part of the core investment conclusion.
+- Skill Scout is a maintenance agent for suggested add-on capabilities and approved low-risk auto-installs, not part of the core investment conclusion.
 - Reflection Section includes a Cathie Wood vs Buffett perspective debate. These perspective skills are reasoning lenses, not evidence sources.
 - The required quantities are 10 news items, 5 papers, 5 open-source projects, and 5 high-signal sentiment evidence items.
 - If a data-input node fails or returns too little data, state that explicitly. Do not fill gaps with invented content.

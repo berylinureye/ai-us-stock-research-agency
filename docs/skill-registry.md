@@ -11,6 +11,7 @@
 - 如果 skill 没有返回足够数据，不能编造补齐。
 - 如果 API key 缺失，相关节点标为 `partial` 或 `failed`。
 - Broker、order、position sizing、auto-trading、account action 类能力禁止进入核心研究链路。
+- Skill Scout 可以自动安装低风险候选，但仅限已通过 benchmark、README/SKILL 审查、且无交易/账户/隐私权限的只读数据或 reasoning skills；安装结果必须记录在维护附录。
 
 ## 1. 信息与舆情 Skills
 
@@ -41,6 +42,7 @@
 | `nasdaq-data` | Stock Discovery; Fundamental; AI Information & Sentiment; Paper Attribution | Nasdaq financials、quotes、short interest、institutional、insider、news | ticker | quotes、financials、news、holdings | 通常公开接口 | 推荐 | 改用 SEC/Yahoo/Finviz | 不把 delayed quote 当实时 |
 | `finviz` | Stock Discovery; Fundamental; Technical; Paper Attribution | Screener、估值、技术字段、insider、news 辅助 | ticker 或筛选条件 | screener 表、估值、技术、新闻 | 通常无需 key | 推荐 | 改用 Nasdaq/Yahoo/TradingView | 第一轮技术分析不得用新闻解释走势 |
 | `yahoo-finance` | Stock Discovery; Fundamental; Technical; Paper Attribution | 免费行情、历史价格、财务、options、news 交叉验证 | ticker、时间范围 | OHLCV、quote、财务、新闻 | 通常无需 key | 推荐 | 改用 Longbridge/TradingView/Nasdaq | 不作为唯一关键财务来源 |
+| `global-stock-data` | Stock Discovery; Fundamental; Technical; Paper Attribution | 零鉴权美股/港股 quote、K-line、技术指标、基本面、SEC filing、全市场列表备份验证 | ticker、市场、date range、indicator、filing type | quote、OHLCV、MA/MACD/RSI/KDJ/布林带、财务指标、SEC filing、market list | 无 key；需要 Python `requests` | 推荐 | 改用 Longbridge/Yahoo/Nasdaq/TradingView；标 `partial` | 不作为重大财务结论唯一来源；不下单、不做账户动作 |
 | `tradingview` | Stock Discovery; Technical; Paper Attribution | 技术指标、scanner、图表/行情辅助 | ticker、市场、周期 | 技术指标、scanner、价格 | 取决于 skill 配置 | 推荐 | 改用 Longbridge/Yahoo/Finviz | 不输出交易指令 |
 
 ## 4. 基本面 Skills
@@ -76,9 +78,10 @@
 
 | Skill / Data Node | 归属 Agent | 用途 | 输入 | 输出 | API / 配置 | 必需性 | 失败降级 | 禁止用途 |
 |---|---|---|---|---|---|---|---|---|
-| `longbridge-market-data` | Paper Portfolio & Attribution | entry/exit close、K-line、benchmark return | ticker、entry/exit dates、benchmark | return、excess return、MFE/MAE 基础数据 | Longbridge read-only | 强推荐 | 用 Yahoo/TradingView 交叉验证 | 不下单、不连 live account |
-| `yahoo-finance` | Paper Portfolio & Attribution | 历史价格交叉验证 | ticker、date range | historical close、benchmark price | 通常无需 key | 推荐 | 用 Longbridge/TradingView | 不作为真实成交记录 |
+| `longbridge-market-data` | Paper Portfolio & Attribution | next-Monday entry close、next-Friday review close、K-line、benchmark return | ticker、entry/review dates、benchmark | return、excess return、MFE/MAE、expected-vs-actual 基础数据 | Longbridge read-only | 强推荐 | 用 Yahoo/TradingView 交叉验证 | 不下单、不连 live account |
+| `yahoo-finance` | Paper Portfolio & Attribution | 历史价格交叉验证、Monday/Friday close 验证 | ticker、date range | historical close、benchmark price | 通常无需 key | 推荐 | 用 Longbridge/TradingView | 不作为真实成交记录 |
 | `tradingview` | Paper Portfolio & Attribution | 技术状态和 delayed price 交叉验证 | ticker、date range | price/technical context | 取决于 skill 配置 | 可选 | 只做价格回看，不做技术解释 | 不输出交易建议 |
+| `global-stock-data` | Paper Portfolio & Attribution | next-Monday entry close、next-Friday review close、K-line 和 benchmark price 的零鉴权备份验证 | ticker、date range、benchmark | historical close、indicator context、backup quote | 无 key；需要 Python `requests` | 推荐 | 用 Longbridge/Yahoo/TradingView | 不作为真实成交记录；不连接账户 |
 | `cboe-data` | Paper Portfolio & Attribution | VIX/波动率解释 market regime drag | date range | VIX / volatility context | 公开/skill 配置 | 可选 | 标 `partial` | 不把波动率当个股归因唯一原因 |
 | `fred-macro` | Paper Portfolio & Attribution | 利率/宏观 regime 归因 | series、date range | macro context | `FRED_API_KEY` 推荐 | 可选 | 标 `partial` | 不做宏观绝对解释 |
 
@@ -86,7 +89,7 @@
 
 | Skill / Data Node | 归属 Agent | 用途 | 输入 | 输出 | API / 配置 | 必需性 | 失败降级 | 禁止用途 |
 |---|---|---|---|---|---|---|---|---|
-| GitHub skill search | Skill Scout | 每周检查未安装 skills/plugins/MCP | query、stars/forks benchmark、当前已安装 skill 列表 | Install / Watch / Reject 建议 | 可公开搜索；高频可能需要 token | 必需于 Skill Scout | 标 `partial`，只用已知 curated lists | 不自动安装 |
+| GitHub skill search | Skill Scout | 每周检查未安装 skills/plugins/MCP，并在低风险授权范围内自动安装合格候选 | query、stars/forks benchmark、README/SKILL、当前已安装 skill 列表 | Install / Watch / Reject、安装证据、安装路径 | 可公开搜索；高频可能需要 token | 必需于 Skill Scout | 标 `partial`，只用已知 curated lists；不安装 | 不安装 broker/order/account/position-sizing/opaque installer |
 | Installed skill inventory | Skill Scout; Intent Router | 判断已有能力和重复项 | 本地 skill 列表 | 当前 capability map | 本地环境 | 必需 | 如果不可读，标 `failed` 并禁止安装建议 | 不把已安装 skill 误报为缺失 |
 | Curated lists | Skill Scout | awesome-agent-skills、ClawHub、skills.sh 等候选来源 | list URL、关键词 | 候选 skill 列表 | 取决于网络 | 可选 | 标 `partial` | stars 高不代表安全 |
 

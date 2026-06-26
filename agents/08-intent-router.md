@@ -64,7 +64,7 @@ Router 必须拒绝或改写以下请求：
 允许：
 
 - 研究型候选池。
-- 最终结论层的研究型 action rating：`Research Buy / Hold-Watch / Avoid-Sell Bias / No Rating`。
+- 最终结论层的研究型 action rating：`Research Buy / Hold-Watch / Take-Profit / Trim Bias / Avoid-Sell Bias / No Rating`。
 - 基本面、技术面、舆情、趋势、归因分析。
 - shadow ledger / paper observation，不连接真实账户。
 - 对长期趋势做场景推演，但必须标注事实、推断、假设。

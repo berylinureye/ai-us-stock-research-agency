@@ -32,6 +32,7 @@
 - `longbridge-technical`：技术指标、K 线形态、趋势框架。
 - `tradingview`：TradingView scanner、技术指标、财务/评级摘要、news headline；第一轮只使用 price/technical fields。
 - `yahoo-finance`：OHLCV、历史价格、options、行情交叉验证。
+- `global-stock-data`：零鉴权 K-line、MA/MACD/RSI/KDJ/布林带和行情交叉验证；只读，不输出交易指令。
 
 背景和风险上下文：
 - `cboe-data`：VIX、CBOE 指数、期权和市场波动上下文；不得在第一轮替代图表判断。

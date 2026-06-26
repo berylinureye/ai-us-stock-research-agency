@@ -14,6 +14,7 @@
   -> Stock Discovery 控噪筛选
   -> 深度研究
   -> Final Conclusion
+  -> Conclusion Pool 记录用户选择
   -> Paper Observation Ledger
   -> Attribution 归因
   -> 下周调整 signal 权重
@@ -71,23 +72,27 @@ Active candidate 至少需要 2 个独立 signal family：
 - 接 broker/sandbox 会引入订单、账户、权限、fill assumption 等复杂度。
 - 你现在真正要验证的是“候选生成和 thesis 质量”，不是交易执行质量。
 
-第一阶段用 `shadow_ledger`：
+第一阶段用 `Conclusion Pool` + `shadow_ledger`：
 
 - 不连接 broker。
 - 不下单。
-- 只按规则记录假设买入价、卖出价和 benchmark-relative return。
+- 结论池记录用户每天实际选择观察的股票。
+- shadow ledger 按规则记录假设买入价、复盘价和 benchmark-relative return。
 
 ### 3.2 默认观察规则
 
 | 项目 | 默认规则 |
 |---|---|
 | 方向 | long-only observation |
-| Entry | 报告发布日 close；若收盘后发布，则下一交易日 close |
-| Exit | 第 5 个交易日 close |
-| Holding window | 5 trading days |
+| Decision | 每周五 final report |
+| Conclusion Pool | 记录用户选择的 Top 5 / override 标的 |
+| Entry | 下周一 regular-session close；若休市，则下一交易日 close |
+| Review | 下周五 regular-session close；若休市，则最近 regular-session close |
+| Holding window | Monday close -> Friday close，或报告指定的 estimated holding range |
 | Benchmark | `QQQ`, `SPY`, 相关 sector ETF |
 | Sizing | equal notional observation，仅用于比较，不做仓位 |
-| Metrics | absolute return, benchmark return, excess return, max adverse move, max favorable move |
+| Metrics | absolute return, benchmark return, excess return, expected upside vs actual return, max adverse move, max favorable move |
+| Exit / Trim | 达到预估涨幅上沿且动能衰减时给 Take-Profit / Trim Bias；跌破失效位或 thesis 断裂时给 Avoid-Sell Bias |
 
 ### 3.3 Paper API 未来路线
 
@@ -116,12 +121,15 @@ Active candidate 至少需要 2 个独立 signal family：
 | market_regime_drag | 大盘/利率/VIX 主导 | 不惩罚 thesis，记录 regime 条件 |
 | sector_factor_drag | 行业整体拖累 | 加 sector benchmark |
 | already_priced_in | 叙事对但已定价 | 提高预期差门槛 |
+| upside_target_met | 实际收益达到或超过预估涨幅上沿 | 检查是否触发止盈/减磅规则 |
+| take_profit_triggered | 满足 Take-Profit / Trim Bias | 记录是否需要缩短观察周期或提高追高门槛 |
 | catalyst_misread | 催化剂时间/强度/方向误判 | 改 catalyst scoring |
 | wrong_exposure_mapping | 产业链映射错公司 | 降低该映射规则权重 |
 | weak_fundamental_link | 舆情强但财务链弱 | 强化 Fundamental gate |
 | technical_invalidation | 技术位先破坏 | 强化 Technical gate |
 | data_quality_issue | 数据错链、过时、缺失 | 降低数据源信任 |
 | unexpected_event | 突发新闻/宏观/监管 | 记录但不简单惩罚 |
+| user_override | 用户选择了非 Top 5 或非默认候选 | 与模型默认池分开统计 |
 | noise_random | 无法解释 | 降低置信度，不强行归因 |
 
 ## 5. 最小可行版本
@@ -129,7 +137,8 @@ Active candidate 至少需要 2 个独立 signal family：
 第一阶段只需要三件事：
 
 1. Stock Discovery Agent 每周产出最多 8 个 active candidates。
-2. Final Report 从 active candidates 中选择进入 paper observation ledger 的标的。
-3. 下周 Paper Portfolio & Attribution Agent 用 close-to-close 回看表现并更新规则。
+2. Final Report 生成 Top 5 Research Action Pool，包含预估涨幅区间、预计观察/持有周期和卖出/止盈规则。
+3. 用户选择的标的进入 Conclusion Pool。
+4. 下周一按 close 做假设买入，下周五 Paper Portfolio & Attribution Agent 用 close-to-close 回看表现并更新规则。
 
 这个闭环比直接接模拟盘更重要。等它稳定后，再接 paper API 才有意义。

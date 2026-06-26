@@ -22,7 +22,7 @@
 - `longbridge-intel`：市场异动、sector rotation、ETF flow、catalyst、ranking。
 - `longbridge-market-data`：市场关注、价格异动和候选确认。
 - `longbridge-research`：分析师、机构、insider、short interest 背景。
-- `finviz`、`tradingview`、`nasdaq-data`、`yahoo-finance`：screener、headline、行情和辅助筛选。
+- `finviz`、`tradingview`、`nasdaq-data`、`yahoo-finance`、`global-stock-data`：screener、headline、行情、全市场列表和辅助筛选。
 - GitHub / arXiv / RSS：开发者采用、论文方向、行业新闻。
 
 这些 skills 是候选生成数据节点，不是结论来源。

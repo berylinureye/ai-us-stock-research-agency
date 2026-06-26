@@ -21,7 +21,8 @@ Minimum quantity:
 | Module | Required Count | Minimum Source Requirement |
 |---|---:|---|
 | Intent Route Plan | 1 | task type, selected agents, skipped agents, skill plan, missing inputs, safety boundary |
-| Top 5 Research Action Pool | <= 5 | action rating, confidence, hard evidence, invalidation, next-week check |
+| Top 5 Research Action Pool | <= 5 | action rating, confidence, estimated upside range, estimated holding range, exit/trim rule, hard evidence, invalidation, next-week check |
+| Conclusion Pool | >= 0 selected entries | selected_by_user, expected Monday entry, Friday review date, status |
 | AI technology news | 10 | title, source, date, link |
 | AI academic papers | 5 | title, authors or institution if available, date, link |
 | AI open-source projects | 5 | repo name, link, stars or benchmark evidence |
@@ -40,12 +41,15 @@ The first visible page must contain:
 
 - One-sentence main conclusion.
 - Research treatment: strong confirm / keep / downgrade / defer / exclude.
-- Research action rating: Research Buy / Hold-Watch / Avoid-Sell Bias / No Rating.
+- Research action rating: Research Buy / Hold-Watch / Take-Profit / Trim Bias / Avoid-Sell Bias / No Rating.
 - Confidence score from 0-100.
 - Top 5 Research Action Pool when eligible candidates exist.
+- Estimated upside range and estimated holding range for each Top 5 candidate.
+- Exit / trim rule for each Top 5 candidate.
 - First-tier, second-tier, observation-layer, and excluded/deferred candidates.
 - The 3-5 highest-conviction judgments.
-- The hardest 2-3 evidence points for each high-conviction judgment.
+- The hardest 2-3 evidence summaries for each high-conviction judgment.
+- An `Evidence Pack` link for each Top 5 / core candidate, pointing to a separate evidence subfile.
 - The largest falsification risk.
 - The most important next-week validation item.
 
@@ -57,9 +61,61 @@ The final brief must not begin with:
 - Tool failure tables.
 - Quality gate checklists.
 - Long raw candidate tables.
+- Full evidence tables and long source lists.
 - Generic methodology.
 
 Those items are required for auditability, but they must appear after the Boss Decision Page and core evidence chain.
+
+## Two-Hop Evidence Linking Checks
+
+The brief must separate decision readability from evidence auditability.
+
+For every published report at:
+
+```text
+reports/{report_slug}.md
+```
+
+there must be a sibling evidence subfile:
+
+```text
+reports/{report_slug}.evidence.md
+```
+
+The main report must link each Top 5 / core candidate to an anchor in the evidence subfile:
+
+```markdown
+[证据包](./{report_slug}.evidence.md#ticker-or-theme)
+```
+
+The evidence subfile must then link to original sources.
+
+Required evidence subfile structure:
+
+```markdown
+# 证据包：{report_title}
+
+[返回主报告](./{report_slug}.md)
+
+## Evidence Index
+| Ticker / Theme | Main Claim | Evidence Anchor |
+|---|---|---|
+
+## {ticker_or_theme}
+| Evidence ID | Source Type | Date | Supports Which Claim | Fact / Inference / Hypothesis | Link | Notes |
+|---|---|---|---|---|---|---|
+
+## Data Node Status
+| Input Node | Status | Notes |
+|---|---|---|
+```
+
+Quality rules:
+
+- The Boss Decision Page may include short evidence summaries, but not full citation tables.
+- Long news, paper, GitHub, sentiment, transcript, SEC/IR, and technical evidence tables belong in the evidence subfile.
+- Every high-conviction claim in the main report must be traceable by two hops: main report -> evidence subfile -> original source.
+- If an evidence subfile is missing, mark format completeness as failed.
 
 ## Research Action Rating Checks
 
@@ -69,6 +125,7 @@ Final conclusions may include research action ratings, but they must obey these 
 |---|---|
 | `Research Buy` | Confidence >=75, no major Reflection break, at least three of information/sentiment, fundamental, technical, and Reflection support the thesis |
 | `Hold-Watch` | Confidence 60-74 or one major confirmation missing |
+| `Take-Profit / Trim Bias` | Actual price reaches or exceeds estimated upside high end, or risk/reward deteriorates after catalyst realization or technical momentum decay |
 | `Avoid-Sell Bias` | Confidence <60, thesis broken, technical invalidation, weak fundamental link, or overextended expectations |
 | `No Rating` | Missing data, failed critical node, or insufficient evidence |
 
@@ -76,8 +133,16 @@ Top 5 Research Action Pool rules:
 
 - Maximum 5 entries.
 - Do not fill all 5 slots if fewer candidates clear the threshold.
-- Every entry must include hard evidence, invalidation condition, and next-week check.
+- Every entry must include estimated upside range, estimated holding range in days, exit/trim rule, hard evidence, invalidation condition, and next-week check.
 - The pool is for shadow ledger and attribution only. It must not include order instructions, target prices, position sizing, or broker/account actions.
+
+Conclusion Pool rules:
+
+- Record user-selected candidates separately from the model's Top 5 suggestions.
+- Default cycle is Friday analysis -> next Monday hypothetical entry -> next Friday review.
+- If the user selects no candidates, record `selected_by_user=no` rather than assuming a selection.
+- If the user overrides the Top 5 and chooses another ticker, mark it as `user_override`.
+- Next-Friday attribution must compare actual return against the estimated upside range.
 
 ## Accuracy Checks
 
@@ -101,6 +166,8 @@ The final brief must include:
 - Boss Decision Page at the very start of the published report, before any Intent Route Plan, run status, or data-node status.
 - Research action rating and confidence score for core candidates.
 - Top 5 Research Action Pool when one or more candidates clear the threshold.
+- Evidence Pack link for every Top 5 / core candidate.
+- Separate sibling evidence subfile for long evidence tables and source citations.
 - Core judgment table with hard evidence and falsification risk.
 - Research tiering by evidence strength: first tier, second tier, observation layer, excluded/deferred.
 - Intent Route Plan.
@@ -120,6 +187,7 @@ The final brief must include:
 - Reflection / closed-loop review.
 - Wood vs Buffett perspective debate summary.
 - Paper Portfolio & Attribution section when prior observations exist.
+- Conclusion Pool section or status when Top 5 candidates exist.
 - Suggested add-on features from Skill Scout when available.
 
 ## Language Style
@@ -177,10 +245,18 @@ If a node fails, do not silently continue as if data exists. Mark the affected c
   - 老板决策页是否在发布报告最前面：有 / 无
   - 是否先给主结论、分层排序、最大风险和下周验证：有 / 无
   - 是否把 Intent Route Plan、数据节点状态和质量检查后置：有 / 无
+  - 是否为每个 Top 5 / 核心候选提供 Evidence Pack 链接：有 / 无
+  - 是否存在同名证据子文件 `{report_slug}.evidence.md`：有 / 无
+  - 长证据表是否没有塞进老板决策页：有 / 无
   - 高置信度判断是否有 2-3 条硬证据：有 / 无
   - 是否包含 action rating 和 confidence：有 / 无
   - Top 5 池是否不超过 5 个：有 / 无 / 不适用
   - 入池候选是否 confidence >=75：有 / 无 / 不适用
+  - Top 5 是否包含预估涨幅区间：有 / 无 / 不适用
+  - Top 5 是否包含预计观察/持有周期：有 / 无 / 不适用
+  - Top 5 是否包含卖出/止盈规则：有 / 无 / 不适用
+  - 结论池是否记录用户选择状态：有 / 无 / 不适用
+  - 是否使用周五分析 -> 下周一假设买入 -> 下周五复盘：有 / 无 / 不适用
   - 是否没有目标价、仓位、下单或账户动作：有 / 无
   - Intent Route Plan：有 / 无
   - AI 技术新闻：{count}/10

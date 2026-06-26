@@ -65,9 +65,11 @@ AI inference demand + hyperscaler capex + semiconductor / data center supply cha
 - Stock Discovery 不使用固定初始股票池，必须自己发现 10-15 个 raw candidates。
 - Stock Discovery 最多筛出 8 个 active candidates。
 - 再按 Route Plan 跑 AI Information & Sentiment、Fundamental、Technical、Reflection、Final Trend。
-- Final Trend 必须输出研究型 action rating、confidence 和 Top 5 Research Action Pool。
+- Final Trend 必须输出研究型 action rating、confidence、预估涨幅区间、预计观察/持有周期、卖出/止盈规则和 Top 5 Research Action Pool。
 - 只有 confidence >=75 且无重大 Reflection 断裂的 `Research Buy` 可以进入 Top 5。
-- Top 5 进入 Paper Observation Ledger，用于下周归因。
+- 用户实际选择的候选进入 Conclusion Pool。
+- Top 5 / 用户选择项进入 Paper Observation Ledger，用于下周归因。
+- 默认下周一 close 假设买入，下周五 close 对比实际涨幅与预估涨幅区间。
 - 不输出目标价、仓位、下单或账户动作。
 ```
 
@@ -88,6 +90,7 @@ AI inference demand + hyperscaler capex + semiconductor / data center supply cha
 - `tradingview`
 - `nasdaq-data`
 - `yahoo-finance`
+- `global-stock-data`
 - GitHub / arXiv / RSS 输入节点
 
 更重要的是先验证筛选规则，而不是继续加入口。
@@ -116,6 +119,7 @@ AI inference demand + hyperscaler capex + semiconductor / data center supply cha
 建议项：
 
 - Longbridge CLI/MCP read-only setup：行情、K 线、基本面、research。
+- `global-stock-data`：已安装，零鉴权；只需要本地 Python `requests`，作为行情/K 线/基本面/SEC filing 备份验证。
 - `FINNHUB_API_KEY`：补充 company profile、earnings、news、metrics。
 - `ALPHA_VANTAGE_API_KEY`：补充行情/技术/基本面，但免费额度有限。
 - `FRED_API_KEY`：宏观和利率背景。

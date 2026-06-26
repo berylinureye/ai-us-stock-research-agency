@@ -6,10 +6,11 @@ The ledger is not a brokerage account and does not place orders. It records hypo
 
 Default workflow:
 
-1. After the weekly final report, copy selected candidates into `paper-observation-template.csv`.
-2. Fill `entry_date`, `entry_price`, `planned_exit_date`, and benchmark fields using close prices.
-3. Next week, fill exit prices and returns.
-4. Run `agents/07-paper-portfolio-attribution-agent.md` to attribute outcomes.
+1. After the Friday final report, copy Top 5 Research Action Pool candidates or user-selected conclusion-pool entries into `paper-observation-template.csv`.
+2. Use the next Monday regular-session close as the hypothetical entry price. If Monday is a market holiday, use the next regular trading session close.
+3. Fill expected upside range, estimated holding range in days, invalidation condition, and exit/trim bias from the final report.
+4. On the next Friday close, fill review price, return, benchmark-relative return, and expected-vs-actual result.
+5. Run `agents/07-paper-portfolio-attribution-agent.md` to attribute outcomes and update signal rules.
 
 Recommended naming:
 
@@ -18,3 +19,5 @@ paper-observations-YYYY-MM-DD.csv
 ```
 
 Do not store API keys, account IDs, or broker credentials in this folder.
+
+Do not store real trades. This folder is for shadow-ledger observations only.

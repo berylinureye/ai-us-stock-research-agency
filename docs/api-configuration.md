@@ -70,6 +70,7 @@
 | `nasdaq-data` | 无 key | Nasdaq 内部接口，可能变化 |
 | `finviz` | 无 key | HTML scraping，需尊重频率 |
 | `tradingview` | 无 key | 公共内部接口，可能变化 |
+| `global-stock-data` | 无 key；需要 Python `requests` | 已安装；作为美股/港股行情、K-line、技术指标、基本面和 SEC filing 备份验证源 |
 | `cboe-data` | 无 key | 公共数据接口，可能变化 |
 | `ak-rss-digest` | 无 key | RSS/文章类输入 |
 | `transcript-polisher` | 无 key | 文本清洗，不是数据源 |

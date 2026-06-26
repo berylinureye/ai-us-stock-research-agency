@@ -15,7 +15,8 @@
 - 哪些叙事应保留、降级或暂时剔除。
 - 最终结论的置信度、反证条件和下周观察重点。
 - 如果我是投资研究老板，本周最该记住的 3-5 个判断是什么。
-- 哪些候选可以给出研究型买入/持有观察/回避或卖出倾向，以及是否进入 Top 5 Research Action Pool。
+- 哪些候选可以给出研究型买入/持有观察/止盈/回避或卖出倾向，以及是否进入 Top 5 Research Action Pool。
+- 每个核心候选的预估涨幅区间、预计观察/持有周期范围，以及触发卖出或止盈的条件。
 
 ### 输入来源
 
@@ -81,26 +82,41 @@
 |---|---|---|
 | `Research Buy` | 研究上值得进入 Top 5 Research Action Pool | 置信度 >=75，信息/基本面/技术面/Reflection 至少三方支持，且没有重大断裂 |
 | `Hold-Watch` | 保留观察，暂不进入 Top 5 | 置信度 60-74，或故事成立但缺少一个关键确认 |
+| `Take-Profit / Trim Bias` | 价格已高于预估涨幅上沿或风险回报变差，建议从研究池角度止盈/减磅 | 价格达到或超过预估涨幅上沿，且技术动能衰减、估值/预期过满或催化剂兑现 |
 | `Avoid-Sell Bias` | 回避、降级或卖出倾向 | 置信度 <60，或基本面断裂、技术面失效、估值/预期过满、Reflection 判定断裂 |
 | `No Rating` | 暂不给倾向 | 数据质量不足、核心 section 缺失或关键来源失败 |
 
-这些 rating 是内部研究结论，不是自动交易指令、账户建议或个性化投资建议。`Research Buy` 表示进入 shadow ledger / paper observation 的优先级；`Avoid-Sell Bias` 表示从研究池中降级、回避或如果已有观察则标记为卖出倾向，不代表真实账户卖出指令。
+这些 rating 是内部研究结论，不是自动交易指令、账户建议或个性化投资建议。`Research Buy` 表示进入 shadow ledger / paper observation 的优先级；`Take-Profit / Trim Bias` 和 `Avoid-Sell Bias` 表示研究池层面的止盈/降级/回避倾向，不代表真实账户卖出指令。
 
 ### Top 5 Research Action Pool 规则
 
 - 默认最多 5 个。
 - 只有 `Research Buy` 且置信度 `>=75` 的候选可以进入。
 - 如果符合条件的候选少于 5 个，宁可少于 5 个，也不能凑数。
-- 每个入池候选必须写出：rating、confidence、hard evidence、why now、invalidation、next-week check。
+- 每个入池候选必须写出：rating、confidence、estimated upside range、estimated holding range、hard evidence、why now、invalidation、exit/trim rule、next-week check。
 - 如果 Reflection 指出重大断裂，不得入池，即使技术面强。
 - 如果只有舆情/播客/GitHub 热度强，没有基本面或技术面确认，不得入池。
 - Top 5 池只进入 shadow ledger 和下周归因，不触发真实交易。
+
+### 预估涨幅与观察/持有周期规则
+
+- 必须给每个 Top 5 候选输出 `estimated_upside_range_pct`，格式为低位 / base / 高位，例如 `2% / 4% / 7%`。
+- 涨幅区间是研究情景，不是目标价，不得写成保证收益。
+- 默认评估窗口是“本周五报告 -> 下周一假设买入 -> 下周五复盘”；如果 thesis 需要更长验证，必须写出 `estimated_holding_range_days`。
+- `estimated_holding_range_days` 是观察/持有时间范围，不是仓位比例。
+- 必须写出 `exit_or_trim_rule`：
+  - 若价格达到或超过预估涨幅高位，且量价/催化剂/估值显示过热，给 `Take-Profit / Trim Bias`。
+  - 若价格跌破技术失效位或 fundamental thesis 断裂，给 `Avoid-Sell Bias`。
+  - 若价格未到目标区间且 thesis 未断，维持 `Hold-Watch` 或继续 observation。
+- 不能输出具体仓位比例、真实下单指令或账户动作。
 
 ### 内部老板简报边界
 
 - 报告开头必须是 `老板决策页`，不是 `Intent Route Plan`、`运行边界`、`数据节点状态` 或 `质量检查`。
 - `老板决策页` 必须不超过一屏，直接给出主结论、Top 5 Research Action Pool、研究动作、风险和下周验证。
 - 核心证据必须是强事实优先：官方财报/IR/SEC、明确收入/订单/指引、价格与技术面数据、可复核的一手链接。论文、GitHub、播客、Reddit/HN 只能作为辅助趋势证据。
+- 必须使用 two-hop evidence linking：主报告中的每个 Top 5 / 核心候选只放 2-3 条证据摘要和一个 `Evidence Pack` 链接；完整证据表、原始来源链接、长新闻/论文/GitHub/舆情表必须写入同名子文件 `reports/{report_slug}.evidence.md`。
+- `Evidence Pack` 链接格式示例：`[证据包](./{report_slug}.evidence.md#avgo)`。证据子文件再链接到官方披露、SEC、IR、新闻、论文、GitHub、transcript 或社区讨论原始来源。
 - 对每个进入第一梯队的公司/链条，必须给出 `判断 -> 硬证据 -> 风险/证伪`，不要只堆材料。
 - 如果结论不能被强证据支持，要明确写成 `观察层` 或 `暂缓`，不能用模糊措辞冒充结论。
 - 不输出真实交易指令、目标价、仓位、下单或账户动作；但可以输出研究型 action rating、研究排序、证据强弱和需要继续跟踪/剔除的研究对象。
@@ -118,8 +134,8 @@
 - 本周研究裁决：强确认 / 保留 / 降级 / 暂缓 / 剔除
 
 ## 2. 本周研究动作
-| Rank | Ticker / Theme | Research Rating | Confidence | Why Now | Hard Evidence | Falsification |
-|---:|---|---|---:|---|---|---|
+| Rank | Ticker / Theme | Research Rating | Confidence | Est. Upside Range | Est. Holding Range | Exit / Trim Rule | Why Now | Hard Evidence Summary | Evidence Pack | Falsification |
+|---:|---|---|---:|---|---|---|---|---|---|---|
 
 ## 3. 不进核心池
 | Ticker / Theme | Treatment | Reason |
@@ -132,19 +148,21 @@
   2.
   3.
 
-# 证据包
+# 证据索引
+
+完整证据链必须写入同名子文件：`reports/{report_slug}.evidence.md`。主报告只保留证据摘要和指向子文件的链接。
 
 ## 5. 核心判断与硬证据
-| 判断 | Action Rating | Confidence | 处理 | 证据强度 | 最硬的 2-3 条证据 | 风险/证伪 |
-|---|---|---:|---|---|---|---|
+| 判断 | Action Rating | Confidence | Est. Upside Range | Est. Holding Range | 处理 | 证据强度 | 最硬的 2-3 条证据摘要 | Evidence Pack | 风险/证伪 |
+|---|---|---:|---|---|---|---|---|---|---|
 
 ## 6. Top 5 Research Action Pool
-| Rank | Ticker / Theme | Action Rating | Confidence | Why Now | Hard Evidence | Invalidation | Next-Week Check |
-|---:|---|---|---:|---|---|---|---|
+| Rank | Ticker / Theme | Action Rating | Confidence | Est. Upside Range | Est. Holding Range | Exit / Trim Rule | Why Now | Hard Evidence Summary | Evidence Pack | Invalidation | Next-Week Check |
+|---:|---|---|---:|---|---|---|---|---|---|---|---|
 
 ## 7. 本周研究排序
-| 层级 | 主题/公司/板块 | Action Rating | Confidence | 为什么在这一层 | 当前处理 |
-|---|---|---|---:|---|---|
+| 层级 | 主题/公司/板块 | Action Rating | Confidence | Est. Upside Range | 为什么在这一层 | 当前处理 |
+|---|---|---|---:|---|---|---|
 
 ## 8. 当前观察到的 AI 趋势故事
 | 故事 | 已有证据 | 基本面承接 | 技术面反馈 | Reflection 裁决 | 当前处理 |
@@ -187,7 +205,12 @@
 ## A. Intent Route Plan
 - 粘贴或摘要本次 Intent Route Plan。
 
-## B. 上游 Section 状态
+## B. Evidence Subfile Manifest
+- 主报告文件：`reports/{report_slug}.md`
+- 证据子文件：`reports/{report_slug}.evidence.md`
+- 每个 Top 5 / 核心候选必须能从主报告跳到证据子文件，再从证据子文件跳到原始来源。
+
+## C. 上游 Section 状态
 | Section | 状态 | 关键缺口 | 对最终结论的影响 |
 |---|---|---|---|
 | Stock Discovery | complete / partial / missing |  |  |
@@ -220,7 +243,8 @@
 - 必须结论先行。系统执行可以先跑 Intent Router，但最终发布报告开头必须是 `老板决策页`，不要先写 Intent Route Plan、运行边界、数据节点状态、质量门槛或方法说明。
 - 必须用明确判断语气输出研究裁决：强确认 / 保留 / 降级 / 暂缓 / 剔除。
 - 必须把标的/链条分层：第一梯队、第二梯队、观察层、暂不纳入主线。
-- 每个核心判断最多保留 2-3 条最硬证据，细节用链接或附录承接。
+- 每个核心判断最多保留 2-3 条最硬证据摘要，细节必须用 `Evidence Pack` 链接承接到同名证据子文件。
+- 必须生成或要求生成同名证据子文件 `reports/{report_slug}.evidence.md`；主报告不能塞入长证据表。
 - 不重新抓取原始数据，除非上游 Section 缺失关键上下文。
 - 结论必须同时参考 AI 信息与舆情、基本面、技术面和 Reflection。
 - 如果任一 Section 缺失或质量未通过，最终结论必须降级为部分结论。
@@ -229,7 +253,9 @@
 - 长期远演可以写得远，但必须标注时间尺度、关键假设、中间验证指标和结论身份。
 - 输出研究型 action rating 和置信度；不输出目标价、仓位、下单或账户动作。
 - 只有 `Research Buy` 且置信度 >=75、没有重大 Reflection 断裂的候选，才能进入 Top 5 Research Action Pool。
+- 每个 Top 5 候选必须包含预估涨幅区间、预计观察/持有周期、卖出/止盈规则和下周五复盘检查。
 
 输出：
-- 按 System Prompt 的固定格式输出最终 AI 趋势投资研究结论，且先输出老板决策页，再输出证据链，最后输出 Intent Route Plan、上游状态与质量审计附录。
+- 按 System Prompt 的固定格式输出最终 AI 趋势投资研究结论，且先输出老板决策页，再输出证据索引，最后输出 Intent Route Plan、Evidence Subfile Manifest、上游状态与质量审计附录。
+- 同时输出或保存同名证据子文件，承接所有原始证据链接和长表格。
 ```
