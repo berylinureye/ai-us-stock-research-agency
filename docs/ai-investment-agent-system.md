@@ -31,12 +31,14 @@ If any module cannot meet the minimum count, the report must explain which input
 ## Agent Roles
 
 Detailed prompts live in:
+- [Stock Discovery Analyst](../agents/00-stock-discovery-analyst.md)
 - [AI Information & Sentiment Analyst](../agents/02-ai-information-sentiment-analyst.md)
 - [Fundamental Analyst](../agents/03-fundamental-analyst.md)
 - [Technical Analyst](../agents/04-technical-analyst.md)
 - [Reflection Judge](../agents/05-reflection-judge.md)
 - [AI Trend Narrative Analyst](../agents/01-ai-trend-narrative-analyst.md)
 - [Skill Scout](../agents/06-skill-scout.md)
+- [Paper Portfolio & Attribution Agent](../agents/07-paper-portfolio-attribution-agent.md)
 
 ## Installed US Equity Skill Stack
 
@@ -49,6 +51,7 @@ The current stack is research-only and focused on US-listed equities.
 | Fundamentals | `financial-data-collector`, `longbridge-fundamentals`, `longbridge-earnings`, `longbridge-research`, `longbridge-value-investing`, `sec-data`, `nasdaq-data`, `earningswhispers`, `yahoo-finance`, `finviz`, `alpha-vantage`, `finnhub` | Financial statements, SEC filings, earnings, estimates, valuation, company research |
 | Technicals and market regime | `technical-analyst`, `longbridge-technical`, `longbridge-market-data`, `tradingview`, `yahoo-finance`, `cboe-data`, `fred-macro`, `finviz` | Chart-first technical analysis, volatility context, rates/macro context |
 | Reflection | `cathie-wood-perspective`, `buffett-perspective` | Perspective debate over upstream evidence |
+| Paper feedback loop | `longbridge-market-data`, `yahoo-finance`, `tradingview`, `cboe-data`, `fred-macro` | Shadow-ledger price tracking, benchmark comparison, attribution |
 
 Out of scope: broker trading, account actions, portfolio rebalancing, position sizing, order execution, and auto-trading.
 
@@ -56,7 +59,25 @@ Each agent is constrained by:
 - A persistent System Prompt for identity, rules, boundaries, output format, and forbidden behavior.
 - A per-run User Prompt template for the concrete weekly task, input sources, filters, and required result.
 
-This is a directed section pipeline, not a five-agent roundtable. The final conclusion is produced after the information/sentiment, fundamental, technical, and reflection sections are complete.
+This is a directed section pipeline, not a roundtable. The final conclusion is produced after stock discovery, information/sentiment, fundamental, technical, and reflection sections are complete. Paper Portfolio & Attribution runs after the final conclusion as a feedback loop.
+
+### 0. Stock Discovery Analyst
+
+Purpose: generate a capped, high-signal candidate stock pool and reject noise before deep research starts.
+
+Inputs:
+- Executive speeches, YouTube interviews, podcasts, conference talks.
+- Earnings calls and management commentary.
+- Customer capex, supplier/customer relationships, catalysts.
+- GitHub/developer adoption and market/technical screens.
+
+Output:
+- Active research candidates, default max 8.
+- Watchlist candidates.
+- Rejected/deferred noise.
+- Signal quality score and downstream routing.
+
+Rule: a candidate is not a recommendation. Active candidates need at least two independent signal families by default.
 
 ### 1. AI Information & Sentiment Analyst
 
@@ -317,12 +338,14 @@ Default recommendation policy:
 ```text
 RSS / GitHub / arXiv / Podcasts / YouTube / last30days
   -> data input nodes
+  -> Stock Discovery Section
   -> dedupe and normalization
   -> AI Information & Sentiment Section
   -> Fundamental Section
   -> Technical Section
   -> Reflection Section
   -> Final AI Trend Narrative Conclusion
+  -> Paper Portfolio & Attribution Section
   -> weekly structured AI investment brief
   -> Skill Scout: Suggested Add-On Features as a separate appendix
 ```
@@ -337,4 +360,6 @@ Before a final weekly brief is considered complete, it must check:
 - Format completeness: includes AI technology news, AI academic papers, AI open-source projects, and AI information/sentiment evidence.
 - Language style: professional, concise, and similar to a technology intelligence brief.
 - Quantity requirements: at least 10 news items, 5 papers, 5 projects, and 5 high-signal sentiment evidence items.
+- Noise control: active research candidates are capped at 8 unless explicitly overridden.
+- Feedback loop: paper observations are reviewed and attributed when prior observations exist.
 - Tool/data return: every used input node must report success, partial success, or failure.

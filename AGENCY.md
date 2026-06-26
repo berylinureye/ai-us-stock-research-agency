@@ -32,29 +32,33 @@ The Harness Agent must not:
 This is a directed section pipeline, not a roundtable discussion.
 
 ```text
-RSS / YouTube / Podcasts / last30days / GitHub / arXiv / finance / charts
+RSS / YouTube / Podcasts / last30days / GitHub / arXiv / finance / charts / catalysts
+  -> Stock Discovery Section
   -> AI Information & Sentiment Section
   -> Fundamental Section
   -> Technical Section
   -> Reflection Section
      -> Cathie Wood vs Buffett Perspective Debate
   -> Final AI Trend Narrative Conclusion
+  -> Paper Portfolio & Attribution Section
   -> Weekly Brief Quality Gate
   -> Skill Scout Appendix
 ```
 
-The final conclusion is produced only after the information/sentiment, fundamental, technical, and reflection sections are complete or explicitly marked partial.
+The final conclusion is produced only after the discovery, information/sentiment, fundamental, technical, and reflection sections are complete or explicitly marked partial. Paper Portfolio & Attribution is a simulated feedback loop over prior research, not a trading system.
 
 ## 2. Canonical Files
 
 Agent prompts:
 
+- `agents/00-stock-discovery-analyst.md`
 - `agents/02-ai-information-sentiment-analyst.md`
 - `agents/03-fundamental-analyst.md`
 - `agents/04-technical-analyst.md`
 - `agents/05-reflection-judge.md`
 - `agents/01-ai-trend-narrative-analyst.md`
 - `agents/06-skill-scout.md`
+- `agents/07-paper-portfolio-attribution-agent.md`
 
 System and quality docs:
 
@@ -78,6 +82,7 @@ The agency is focused on US-listed equities and AI-related public-market researc
 | Fundamentals | `financial-data-collector`, `longbridge-fundamentals`, `longbridge-earnings`, `longbridge-research`, `longbridge-value-investing`, `sec-data`, `nasdaq-data`, `earningswhispers`, `yahoo-finance`, `finviz`, `alpha-vantage`, `finnhub` | Financial statements, SEC filings, earnings, consensus, valuation, company research, secondary data checks |
 | Technicals and market regime | `technical-analyst`, `longbridge-technical`, `longbridge-market-data`, `tradingview`, `yahoo-finance`, `cboe-data`, `fred-macro`, `finviz` | Chart-first analysis, OHLCV, indicators, support/resistance, volatility, rates, market breadth/proxy context |
 | Reflection | `cathie-wood-perspective`, `buffett-perspective` | Two reasoning lenses over upstream evidence; not data sources |
+| Paper feedback loop | `longbridge-market-data`, `yahoo-finance`, `tradingview`, `cboe-data`, `fred-macro` | Simulated entry/exit price tracking, benchmark comparison, outcome attribution |
 | Skill Scout | GitHub search plus installed-skill inventory | Weekly add-on recommendations; separate appendix only |
 
 ### Optional Or Conditional Skills
@@ -96,6 +101,52 @@ Longbridge skills must be used in read-only research mode. Do not request trade 
 
 ## 3. Section Contracts
 
+### 3.0 Stock Discovery Section
+
+Prompt file:
+
+`agents/00-stock-discovery-analyst.md`
+
+Purpose:
+
+Generate a small, high-signal candidate stock pool before deep research begins.
+
+Inputs:
+
+- Executive and founder speeches, YouTube interviews, conference talks, earnings calls, podcast clips.
+- AI Information & Sentiment raw feeds when available.
+- GitHub/developer adoption signals.
+- Customer capex, supplier/customer relationships, sector rotation, catalysts, market attention, technical screens.
+- User-provided themes and tickers.
+
+Required output:
+
+- Candidate discovery funnel.
+- Active research candidates, capped at 8 by default.
+- Watchlist-only candidates.
+- Rejected/noise candidates and reason.
+- Signal quality score for every candidate.
+- Routing instructions for downstream agents.
+
+Hard boundary:
+
+This section creates candidates, not conclusions. A candidate is not a recommendation.
+
+Noise-control rules:
+
+- Default weekly active candidate cap: 8.
+- At least 2 independent signal families are required for an active research candidate.
+- One-source candidates go to watchlist unless the user explicitly promotes them.
+- Executive/KOL statements are evidence of management narrative, not proof of revenue.
+- Technical strength without narrative/fundamental path can only enter as a technical watch candidate.
+- Every candidate must have a falsifiable reason for inclusion.
+
+Acceptance:
+
+- Every candidate must identify source signal, industry-chain position, evidence type, confidence, missing proof, and next agent.
+- No more than 8 active candidates unless the user overrides the cap.
+- Noise candidates must be explicitly rejected or deferred.
+
 ### 3.1 AI Information & Sentiment Section
 
 Prompt file:
@@ -108,6 +159,7 @@ Collect and organize AI information and sentiment from configured data nodes.
 
 Inputs:
 
+- Stock Discovery Section.
 - RSS/news and `ak-rss-digest`.
 - YouTube/podcasts through `youtube-full`, `bibi`, and `transcript-polisher`.
 - `last30days` across Reddit, X, YouTube, Hacker News, Polymarket, GitHub, and web.
@@ -159,6 +211,7 @@ Test whether candidate AI narratives can become revenue, profit, cash flow, orde
 
 Inputs:
 
+- Stock Discovery Section.
 - AI Information & Sentiment Section.
 - User-provided tickers.
 - Financial statements, earnings calls, segment data, capex, demand indicators, analyst estimates, and valuation multiples.
@@ -291,6 +344,7 @@ Produce the final AI trend investment research conclusion after all upstream sec
 
 Inputs:
 
+- Stock Discovery Section.
 - AI Information & Sentiment Section.
 - Fundamental Section.
 - Technical Section.
@@ -320,7 +374,61 @@ Acceptance:
 - Long-horizon projections can be included even when confidence is low, but must be labeled as scenario thinking rather than verified conclusion.
 - Missing upstream sections require a partial conclusion.
 
-### 3.6 Skill Scout Appendix
+### 3.6 Paper Portfolio & Attribution Section
+
+Prompt file:
+
+`agents/07-paper-portfolio-attribution-agent.md`
+
+Purpose:
+
+Create a weekly feedback loop that tests whether selected research candidates behaved as expected over the next trading week.
+
+Modes:
+
+- `shadow_ledger`: default mode. No broker connection. Record hypothetical entry and exit prices from market data.
+- `paper_api`: optional future mode. May connect to Alpaca paper trading, Longbridge sandbox, IBKR paper, or Futu/Moomoo paper account only after explicit user approval.
+
+Default simulation rules:
+
+- Observation type: hypothetical long-only observation, not a trade recommendation.
+- Entry price: report publication date close, or next available regular-session close if publication occurs after market close.
+- Holding window: next 5 trading days by default.
+- Exit price: close on the 5th trading day, unless the user specifies a different evaluation date.
+- Sizing: equal notional observation units only; no portfolio optimization or position sizing.
+- Primary metric: absolute return.
+- Secondary metric: excess return vs `QQQ`, `SPY`, and relevant sector benchmark.
+
+Inputs:
+
+- Final AI Trend Narrative Conclusion from the prior run.
+- Selected paper-observation candidates.
+- Entry date, entry price rule, exit date rule, benchmark.
+- Current and prior week market prices.
+- Benchmark prices.
+- Unexpected news, macro, earnings, or market regime events during the holding window.
+
+Required output:
+
+- Open observation ledger.
+- Closed observation performance table.
+- Absolute and relative return.
+- Expected thesis vs actual outcome.
+- Attribution classification.
+- Process improvement recommendations.
+- Signal weight updates for future discovery.
+
+Hard boundary:
+
+This section does not place orders, does not manage accounts, and does not provide trading instructions.
+
+Acceptance:
+
+- Every closed observation must include entry date/price, exit date/price, return, benchmark return, excess return, and data source.
+- Every mismatch must be attributed to one or more categories: market regime, sector factor, thesis already priced, catalyst misunderstood, timing/technical entry, wrong company exposure, data quality issue, unexpected event, or random/noise.
+- Attribution must update the research process, not rationalize bad calls.
+
+### 3.7 Skill Scout Appendix
 
 Prompt file:
 
@@ -473,7 +581,23 @@ Create a run header:
 - Required sources:
 ```
 
-### Step 2: Run AI Information & Sentiment Section
+### Step 2: Run Stock Discovery Section
+
+Use `agents/00-stock-discovery-analyst.md`.
+
+Output:
+
+- Active research candidates.
+- Watchlist-only candidates.
+- Rejected/noise candidates.
+- Routing instructions.
+
+Stop conditions:
+
+- If no candidate reaches the active threshold, continue with a watchlist-only brief.
+- If too many candidates pass, keep the top 8 by signal quality score and defer the rest.
+
+### Step 3: Run AI Information & Sentiment Section
 
 Use `agents/02-ai-information-sentiment-analyst.md`.
 
@@ -483,7 +607,7 @@ Stop conditions:
 - If no GitHub or arXiv data returns and no fallback is available.
 - If `last30days` fails, continue only with lower confidence and mark sentiment partial.
 
-### Step 3: Run Fundamental Section
+### Step 4: Run Fundamental Section
 
 Use `agents/03-fundamental-analyst.md`.
 
@@ -494,7 +618,7 @@ Input only:
 
 Do not give it raw social sentiment as proof.
 
-### Step 4: Run Technical Section
+### Step 5: Run Technical Section
 
 Use `agents/04-technical-analyst.md`.
 
@@ -505,7 +629,7 @@ Input only:
 
 First pass must remain chart-only.
 
-### Step 5: Run Reflection Section
+### Step 6: Run Reflection Section
 
 Use `agents/05-reflection-judge.md`.
 
@@ -524,7 +648,7 @@ Output:
 - Wood vs Buffett debate table and summary.
 - Quality check.
 
-### Step 6: Run Final AI Trend Narrative Conclusion
+### Step 7: Run Final AI Trend Narrative Conclusion
 
 Use `agents/01-ai-trend-narrative-analyst.md`.
 
@@ -541,7 +665,20 @@ Output:
 - Risks and falsification.
 - Next-week checks.
 
-### Step 7: Run Skill Scout Appendix
+### Step 8: Run Paper Portfolio & Attribution Section
+
+Use `agents/07-paper-portfolio-attribution-agent.md`.
+
+For a first run, only open the shadow ledger. Starting from the second run, close prior observations and attribute outcomes.
+
+Output:
+
+- Open / closed paper observation ledger.
+- Absolute and benchmark-relative returns.
+- Why the thesis did or did not behave as expected.
+- What to change in next week's discovery and weighting rules.
+
+### Step 9: Run Skill Scout Appendix
 
 Use `agents/06-skill-scout.md`.
 

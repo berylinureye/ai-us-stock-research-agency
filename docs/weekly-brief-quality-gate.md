@@ -8,10 +8,12 @@ The brief is not considered complete unless every checklist item below is explic
 
 The final brief must include all core source modules:
 
+0. Stock discovery candidate funnel.
 1. AI technology news.
 2. AI academic papers.
 3. AI open-source projects.
 4. AI information and sentiment evidence.
+5. Paper portfolio and attribution status when prior observations exist.
 
 Minimum quantity:
 
@@ -21,6 +23,7 @@ Minimum quantity:
 | AI academic papers | 5 | title, authors or institution if available, date, link |
 | AI open-source projects | 5 | repo name, link, stars or benchmark evidence |
 | AI information and sentiment evidence | 5 | source/platform, topic, date or range, link |
+| Active research candidates | <= 8 | ticker, signal families, score, missing proof |
 
 If a module cannot reach the required count, the brief must say so and explain which input node failed or returned insufficient data. Do not invent replacement items.
 
@@ -48,6 +51,7 @@ The final brief must include:
 - Current observed AI trend story.
 - Long-horizon AI trend projection.
 - AI value-chain expansion map.
+- Stock Discovery candidate funnel.
 - Trend synthesis.
 - Information, sentiment, and market narrative synthesis.
 - Investment impact map.
@@ -55,6 +59,7 @@ The final brief must include:
 - Technical analysis handoff.
 - Reflection / closed-loop review.
 - Wood vs Buffett perspective debate summary.
+- Paper Portfolio & Attribution section when prior observations exist.
 - Suggested add-on features from Skill Scout when available.
 
 ## Language Style
@@ -84,6 +89,7 @@ For every data-input node used, record whether it successfully returned data:
 | Chart data | K-line / technical data | success / partial / failed |  |
 | Longbridge data | quote / kline / fundamentals / earnings / research | success / partial / failed |  |
 | Cross-check data | SEC / Nasdaq / Yahoo / TradingView / Finviz / CBOE / FRED | success / partial / failed |  |
+| Paper ledger | simulated entries / exits / attribution | success / partial / failed / not applicable |  |
 | Perspective skills | Wood / Buffett debate | success / partial / failed |  |
 
 If a node fails, do not silently continue as if data exists. Mark the affected conclusion as lower confidence.
@@ -102,9 +108,11 @@ If a node fails, do not silently continue as if data exists. Mark the affected c
   - AI 学术论文：{count}/5
   - AI 开源项目：{count}/5
   - AI 舆情证据：{count}/5
+  - Active research candidates：{count}/8 max
   - 当前观察版趋势故事：有 / 无
   - 长期远演版趋势故事：有 / 无
   - AI 产业链外推图：有 / 无
+  - Paper Portfolio & Attribution：有 / 无 / 不适用
 - 叙事纪律：通过 / 部分通过 / 未通过
   - 当前故事是否有证据：
   - 远期展望是否标注事实/推断/假设：
@@ -127,5 +135,6 @@ If a node fails, do not silently continue as if data exists. Mark the affected c
   - Chart：
   - Longbridge data：
   - Cross-check data：
+  - Paper ledger：
   - Perspective skills：
 ```

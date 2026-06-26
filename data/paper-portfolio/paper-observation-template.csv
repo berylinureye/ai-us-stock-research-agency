@@ -1,0 +1,2 @@
+run_id,thesis_id,ticker,company,observation_type,thesis_summary,signal_families,confidence,entry_rule,entry_date,entry_price,planned_exit_date,exit_date,exit_price,benchmark_primary,benchmark_entry_price,benchmark_exit_price,return_pct,benchmark_return_pct,excess_return_pct,max_adverse_move_pct,max_favorable_move_pct,status,primary_attribution,secondary_attribution,process_change,notes
+YYYY-MM-DD,AI-001,NVDA,NVIDIA,long_observation,"Example: inference demand thesis","executive_speech;capex;technical_strength",medium,"report_date_close_or_next_close",,,,,QQQ,,,,,,,,open,,,,,
