@@ -393,6 +393,7 @@ Before a final weekly brief is considered complete, it must check:
 - Intent routing: route type, selected/skipped agents, skill plan, and missing inputs are explicit.
 - Format completeness: includes AI technology news, AI academic papers, AI open-source projects, and AI information/sentiment evidence.
 - Executive readability: starts with the Boss Decision Page, not the Intent Route Plan, process status, or raw evidence tables.
+- Agent trace readability: UI and streaming outputs show public reasoning summaries, data nodes, findings, judgments, next steps, and Reflection debate summaries instead of raw Markdown or hidden chain-of-thought.
 - Evidence auditability: every Top 5 / core candidate has an Evidence Pack link to a sibling evidence subfile, and that subfile links to original sources.
 - Actionability: includes research action ratings, confidence scores, and Top 5 eligibility without giving order execution, position sizing, or account instructions.
 - Language style: professional, concise, and similar to a technology intelligence brief.

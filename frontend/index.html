@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>美股周报研究台</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%2362b7ff'/%3E%3Ccircle cx='20' cy='12' r='10' fill='%2372e0a7' fill-opacity='.55'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <canvas id="marketCanvas" aria-hidden="true"></canvas>
+
+    <div class="app-shell">
+      <header class="topbar" id="topbar">
+        <button class="back-button" id="backButton" type="button" hidden>返回</button>
+        <div class="topbar-actions">
+          <button class="nav-button" id="pondNavButton" type="button">池塘</button>
+          <span class="model-chip">GPT-5.5</span>
+          <button class="icon-button" id="settingsToggle" type="button" aria-expanded="false" aria-controls="settingsPanel">
+            <span aria-hidden="true">API</span>
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section class="hero" id="heroSection" aria-labelledby="heroTitle">
+          <div class="hero-kicker">US Equity Research Workflow</div>
+          <h1 id="heroTitle">你今天想研究什么？</h1>
+          <p class="hero-subtitle">目前支持美股，可直接从市场扫描开始</p>
+
+          <form class="composer" id="researchForm">
+            <label class="field-label" for="promptInput">研究意图（可选，没想好可以直接开始）</label>
+            <textarea
+              id="promptInput"
+              rows="3"
+              autocomplete="off"
+              placeholder="输入股票、行业、主题或问题"
+            ></textarea>
+
+            <div class="composer-footer">
+              <button class="primary-button" id="submitButton" type="submit">
+                <span>开始研究</span>
+              </button>
+            </div>
+          </form>
+
+          <section class="pond-preview" id="pondPreview" aria-labelledby="pondPreviewTitle">
+            <div>
+              <p class="eyebrow">Watch Pond</p>
+              <h2 id="pondPreviewTitle">关注池塘</h2>
+            </div>
+            <div class="pond-preview-body">
+              <span id="pondPreviewMeta">正在读取池塘...</span>
+              <div class="pond-ticker-row" id="pondPreviewTickers" aria-label="近期关注 ticker"></div>
+            </div>
+            <button class="secondary-button compact-button" id="pondPreviewButton" type="button">查看全部</button>
+          </section>
+
+          <form class="settings-panel" id="settingsPanel" autocomplete="off" hidden>
+            <div class="settings-grid">
+              <label>
+                <span>API Endpoint</span>
+                <input id="endpointInput" type="url" inputmode="url" autocomplete="url" />
+              </label>
+              <label>
+                <span>Local Auth Token</span>
+                <input id="tokenInput" type="password" autocomplete="off" placeholder="可选" />
+              </label>
+            </div>
+            <div class="api-status-row">
+              <span class="api-status" id="apiStatus" role="status">尚未检测后端</span>
+              <button class="secondary-button compact-button" id="testConnectionButton" type="button">检测连接</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="workspace" id="workspaceSection" hidden>
+          <div class="conversation-panel" aria-label="研究对话">
+            <div class="message-list" id="messageList"></div>
+            <section class="workflow-output" id="workflowOutput" aria-labelledby="workflowOutputTitle" hidden>
+              <div class="workflow-output-header">
+                <h2 id="workflowOutputTitle">Agent 思考轨迹</h2>
+                <span id="workflowOutputCount">0 条</span>
+              </div>
+              <div class="workflow-output-list" id="workflowOutputList"></div>
+            </section>
+          </div>
+
+          <div class="thinking-panel" id="thinkingPanel" role="status" aria-live="polite" aria-busy="true">
+            <div class="thinking-stack">
+              <div class="thinking-copy">
+                <span class="thinking-word" id="thinkingWord">研判中</span>
+                <span class="thinking-arrow" aria-hidden="true">›</span>
+              </div>
+              <div class="run-progress" aria-label="周报生成预计进度">
+                <div class="progress-meta">
+                  <span id="progressElapsed">00:00</span>
+                  <span id="progressEstimate">预计 12:00</span>
+                </div>
+                <div class="progress-track" id="progressTrack" role="progressbar" aria-label="12 分钟估算进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                  <span class="progress-fill" id="progressFill"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <aside class="workflow-panel" aria-label="工作流状态">
+            <div class="workflow-header">
+              <h2>工作流</h2>
+              <button class="ghost-button" id="cancelButton" type="button">停止</button>
+            </div>
+            <ol class="workflow-list" id="workflowList"></ol>
+            <div class="stream-log" id="streamLog" aria-live="polite"></div>
+          </aside>
+        </section>
+
+        <section class="result-shell" id="resultSection" hidden>
+          <div class="result-toolbar">
+            <div>
+              <p class="eyebrow">Final Report</p>
+              <h2 id="resultTitle">周报已生成</h2>
+            </div>
+            <div class="download-actions">
+              <button class="secondary-button" id="downloadSummaryButton" type="button">下载精简版.md</button>
+              <button class="secondary-button" id="downloadEvidenceButton" type="button">下载证据链.md</button>
+              <button class="primary-button" id="downloadFullButton" type="button">下载完整.md</button>
+            </div>
+          </div>
+
+          <section class="candidate-section" id="candidateSection" aria-labelledby="candidateTitle" hidden>
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Research Action Pool</p>
+                <h3 id="candidateTitle">本周候选</h3>
+              </div>
+              <span id="candidateStatus">等待周报结构化输出</span>
+            </div>
+            <div class="candidate-grid" id="candidateGrid"></div>
+          </section>
+
+          <div class="tabs" role="tablist" aria-label="报告视图">
+            <button class="tab-button is-active" id="tab-summary" type="button" role="tab" aria-controls="panel-summary" aria-selected="true" data-tab="summary">精简版</button>
+            <button class="tab-button" id="tab-report" type="button" role="tab" aria-controls="panel-report" aria-selected="false" data-tab="report">完整周报</button>
+            <button class="tab-button" id="tab-evidence" type="button" role="tab" aria-controls="panel-evidence" aria-selected="false" data-tab="evidence">双跳证据</button>
+            <button class="tab-button" id="tab-raw" type="button" role="tab" aria-controls="panel-raw" aria-selected="false" data-tab="raw">Raw Markdown</button>
+          </div>
+
+          <article class="markdown-panel report-panel is-active" id="panel-summary" role="tabpanel" aria-labelledby="tab-summary"></article>
+          <article class="markdown-panel report-panel" id="panel-report" role="tabpanel" aria-labelledby="tab-report" hidden></article>
+          <article class="markdown-panel evidence-panel" id="panel-evidence" role="tabpanel" aria-labelledby="tab-evidence" hidden></article>
+          <article class="markdown-panel raw-panel" id="panel-raw" role="tabpanel" aria-labelledby="tab-raw" hidden>
+            <pre id="rawMarkdown"></pre>
+          </article>
+        </section>
+
+        <section class="pond-shell" id="pondSection" hidden>
+          <div class="pond-header">
+            <div>
+              <p class="eyebrow">Watch Pond</p>
+              <h1>我的关注池塘</h1>
+              <p id="pondLastRefresh">最新可用收盘价：尚未刷新</p>
+            </div>
+            <div class="pond-actions">
+              <button class="secondary-button" id="pondReloadButton" type="button">重新读取</button>
+              <button class="primary-button" id="pondRefreshButton" type="button">刷新收盘价</button>
+            </div>
+          </div>
+
+          <div class="pond-layout">
+            <section class="pond-list-panel" aria-labelledby="pondOpenTitle">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Open Observations</p>
+                  <h2 id="pondOpenTitle">近期关注</h2>
+                </div>
+                <span id="pondOpenCount">0 个</span>
+              </div>
+              <div class="pond-table-wrap">
+                <table class="pond-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Ticker</th>
+                      <th scope="col">Rating</th>
+                      <th scope="col">收盘表现</th>
+                      <th scope="col">匹配</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pondOpenTable"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <aside class="pond-detail-panel" id="pondDetailPanel" aria-labelledby="pondDetailTitle">
+              <p class="eyebrow">Detail</p>
+              <h2 id="pondDetailTitle">选择一个关注项</h2>
+              <div id="pondDetailBody" class="pond-detail-body">
+                <p class="empty-copy">点击左侧 ticker 后查看 thesis、收盘价和预估区间。</p>
+              </div>
+            </aside>
+          </div>
+
+          <section class="pond-history-panel" aria-labelledby="pondHistoryTitle">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">History</p>
+                <h2 id="pondHistoryTitle">历史记录</h2>
+              </div>
+              <span id="pondHistoryCount">0 条</span>
+            </div>
+            <div id="pondHistoryList" class="pond-history-list"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>

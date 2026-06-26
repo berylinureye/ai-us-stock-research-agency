@@ -21,6 +21,7 @@ Minimum quantity:
 | Module | Required Count | Minimum Source Requirement |
 |---|---:|---|
 | Intent Route Plan | 1 | task type, selected agents, skipped agents, skill plan, missing inputs, safety boundary |
+| Agent Visible Trace | one per executed agent when UI/streaming is used | public thinking summary, data nodes used/needed, findings, judgment, next step; raw section Markdown folded away |
 | Top 5 Research Action Pool | <= 5 | action rating, confidence, estimated upside range, estimated holding range, exit/trim rule, hard evidence, invalidation, next-week check |
 | Conclusion Pool | >= 0 selected entries | selected_by_user, expected Monday entry, Friday review date, status |
 | AI technology news | 10 | title, source, date, link |
@@ -56,6 +57,7 @@ The first visible page must contain:
 The final brief must not begin with:
 
 - Intent Route Plan.
+- Agent Visible Trace.
 - Run boundaries.
 - Data-node status.
 - Tool failure tables.
@@ -245,6 +247,7 @@ If a node fails, do not silently continue as if data exists. Mark the affected c
   - 老板决策页是否在发布报告最前面：有 / 无
   - 是否先给主结论、分层排序、最大风险和下周验证：有 / 无
   - 是否把 Intent Route Plan、数据节点状态和质量检查后置：有 / 无
+  - UI/stream 是否展示 Agent Visible Trace，而不是默认展示原始 Markdown/参数表：有 / 无 / 不适用
   - 是否为每个 Top 5 / 核心候选提供 Evidence Pack 链接：有 / 无
   - 是否存在同名证据子文件 `{report_slug}.evidence.md`：有 / 无
   - 长证据表是否没有塞进老板决策页：有 / 无
