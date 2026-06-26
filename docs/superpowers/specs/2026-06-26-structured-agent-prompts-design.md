@@ -1,25 +1,27 @@
-# Structured Agent Prompt Design
+# 结构化 Agent 提示词设计
 
-## Context
+## 背景
 
-This repository already has nine agent prompt files under `agents/`. Each file has a long-lived `System Prompt` and a per-run `Weekly User Prompt Template`, which matches the core project rule. The current prompts are usable, but their internal structure is uneven: some emphasize data-node status, some emphasize safety, some emphasize output schema, and some mix workflow, filtering, and hard limits in prose.
+这个仓库现在已经有 9 个 agent prompt 文件，位置在 `agents/` 目录下。每个文件都已经有长期有效的 `System Prompt` 和每次运行用的 `Weekly User Prompt Template`，这符合项目规则。
 
-The goal is to standardize prompt structure without rewriting the whole agency in one pass.
+目前的问题不是“没有提示词”，而是每个 agent 内部结构不完全一致：有的重点写数据节点状态，有的重点写安全边界，有的重点写输出格式，有的把 workflow、过滤规则和 hard limits 混在一大段文字里。
 
-## Decision
+这次目标是：先统一提示词结构，但不要一次性重写整个 agency。
 
-Use a two-step rollout:
+## 决策
 
-1. Add a shared structured prompt standard document.
-2. Apply the standard to two representative agents as examples:
+采用两步走：
+
+1. 新增一份共享的结构化提示词标准文档。
+2. 先把这个标准应用到两个代表性 agent，作为示范：
    - `agents/08-intent-router.md`
    - `agents/02-ai-information-sentiment-analyst.md`
 
-The standard will not include an `Initialization` section.
+这个标准不包含 `Initialization` / 初始化章节。
 
-## Prompt Standard
+## 提示词标准
 
-Every agent prompt should use this structure:
+每个 agent prompt 建议使用下面这套结构。标题可以保留英文关键词，并在说明里用中文解释，这样后续自动检查也更稳定。
 
 ```markdown
 # {Agent Name}
@@ -45,141 +47,141 @@ Every agent prompt should use this structure:
 ## Per-Run User Prompt Template
 ```
 
-### Section Meanings
+### 每个章节的含义
 
-| Section | Purpose |
+| 章节 | 作用 |
 |---|---|
-| `Role` | One-sentence identity and system position. |
-| `Profile` | Language, tone, domain posture, and what kind of agent it should feel like. |
-| `Mission` | The concrete job this agent owns and the questions it answers. |
-| `Input Sources` | Allowed upstream artifacts, raw data, user inputs, and forbidden substitutions. |
-| `Skills / Data Nodes` | Skills and tools treated as data-input nodes or reasoning lenses, with status expectations. |
-| `Filtering Rules` | Inclusion, exclusion, ranking, dedupe, evidence, and noise-control rules. |
-| `Workflow` | Ordered reasoning and execution steps for this agent. |
-| `Output Schema` | The fixed markdown schema the agent must emit. |
-| `Hard Limits` | Safety boundaries, forbidden behavior, evidence boundaries, and no-invention rules. |
-| `Per-Run User Prompt Template` | Runtime variables and instructions for a concrete run. |
+| `Role` | 用一句话定义 agent 的身份，以及它在系统里的位置。 |
+| `Profile` | 定义语言、风格、领域姿态，以及这个 agent 应该像什么样的角色。 |
+| `Mission` | 定义这个 agent 负责完成的具体任务，以及它要回答的问题。 |
+| `Input Sources` | 定义允许读取的上游材料、原始数据、用户输入，以及禁止替代的来源。 |
+| `Skills / Data Nodes` | 定义可用 skills / tools；它们只能作为数据输入节点或 reasoning lens，并且要记录状态。 |
+| `Filtering Rules` | 定义纳入、排除、排序、去重、证据等级和控噪规则。 |
+| `Workflow` | 定义这个 agent 的执行步骤和推理顺序。 |
+| `Output Schema` | 定义这个 agent 必须输出的固定 markdown 格式。 |
+| `Hard Limits` | 定义安全边界、禁止行为、证据边界和不得编造的规则。 |
+| `Per-Run User Prompt Template` | 定义每次运行时需要填入的变量和任务说明。 |
 
-## Scope
+## 范围
 
-### In Scope
+### 本次包含
 
-- Create a durable prompt standard document.
-- Refactor two agent files as examples.
-- Preserve existing investment-safety boundaries:
-  - no auto-trading;
-  - no account actions;
-  - no position sizing;
-  - no order instructions;
-  - research ratings only.
-- Preserve required evidence discipline:
-  - skills/plugins are data-input nodes, not reasoning authorities;
-  - separate facts, inferences, and assumptions;
-  - mark failed or insufficient data nodes explicitly;
-  - keep Boss Decision Page first for published reports;
-  - preserve two-hop evidence linking.
+- 新增一份可长期复用的提示词标准文档。
+- 先改造两个 agent 文件作为示范。
+- 保留现有投资安全边界：
+  - 不自动交易；
+  - 不读取或操作真实账户；
+  - 不给仓位建议；
+  - 不输出下单指令；
+  - 只允许研究型 rating。
+- 保留现有证据纪律：
+  - skills / plugins 是数据输入节点，不是最终推理权威；
+  - 区分事实、推断和假设；
+  - 数据节点失败或返回不足时必须明确标记；
+  - published report 必须先输出 Boss Decision Page；
+  - 保留 two-hop evidence linking。
 
-### Out of Scope
+### 本次不包含
 
-- Bulk rewrite of all nine agents in this step.
-- Changing the core directed pipeline.
-- Changing required weekly brief counts.
-- Adding or installing new skills/plugins.
-- Connecting to broker or paper-trading APIs.
+- 不一次性批量重写全部 9 个 agent。
+- 不改变核心 directed pipeline。
+- 不改变周报必需数量要求。
+- 不新增或安装 skills / plugins。
+- 不接 broker，也不接 paper-trading API。
 
-## Agent Examples
+## 示范 Agent
 
 ### Intent Router
 
-`agents/08-intent-router.md` should become the canonical example for routing agents.
+`agents/08-intent-router.md` 应该作为“路由型 agent”的标准示范。
 
-Key emphasis:
+它的重点是：
 
-- task type classification;
-- selected and skipped agents;
-- skill/data-node plan;
-- missing inputs and defaults;
-- safety boundary check;
-- quality gate requirements;
-- no investment judgment.
+- 识别 task type；
+- 判断 selected agents 和 skipped agents；
+- 制定 skill / data-node plan；
+- 列出缺失输入和默认假设；
+- 检查投资安全边界；
+- 给出质量门要求；
+- 不做投资判断。
 
-Its `Workflow` should be explicit:
+它的 `Workflow` 应该明确写成：
 
-1. Read the user request.
-2. Classify task type.
-3. Select agent path.
-4. Select skill/data-node plan.
-5. Identify missing inputs and defaults.
-6. Check investment safety boundary.
-7. Emit Intent Route Plan.
+1. 阅读用户请求。
+2. 判断 task type。
+3. 选择 agent 路径。
+4. 选择 skill / data-node plan。
+5. 找出缺失输入和默认假设。
+6. 检查投资安全边界。
+7. 输出 Intent Route Plan。
 
 ### AI Information & Sentiment Analyst
 
-`agents/02-ai-information-sentiment-analyst.md` should become the canonical example for research input agents.
+`agents/02-ai-information-sentiment-analyst.md` 应该作为“研究输入型 agent”的标准示范。
 
-Key emphasis:
+它的重点是：
 
-- data-node status first;
-- dedupe and classify evidence by source type;
-- separate fact, opinion, sentiment, developer signal, paper signal, and market narrative;
-- produce required counts:
-  - 10 AI technology news items;
-  - 5 AI academic papers;
-  - 5 AI open-source projects;
-  - 5 high-signal sentiment evidence items;
-- generate current observed story and long-horizon story, with fact/inference/hypothesis labels;
-- hand off questions to Fundamental, Technical, Reflection, and Final Trend agents.
+- 先记录 data-node status；
+- 对证据按来源类型去重和分类；
+- 区分 fact、opinion、sentiment、developer signal、paper signal 和 market narrative；
+- 输出必需数量：
+  - 10 条 AI 技术新闻；
+  - 5 篇 AI 学术论文；
+  - 5 个 AI 开源项目；
+  - 5 条高信号舆情证据；
+- 生成“当前观察版趋势故事”和“长期远演版趋势故事”，并标注 fact / inference / hypothesis；
+- 把问题交给 Fundamental、Technical、Reflection 和 Final Trend agents。
 
-Its `Workflow` should be explicit:
+它的 `Workflow` 应该明确写成：
 
-1. Record data-node status.
-2. Collect and normalize evidence.
-3. Deduplicate and filter for AI/public-market relevance.
-4. Classify evidence by source type and signal type.
-5. Cluster narrative themes.
-6. Build current observed story.
-7. Build long-horizon projection with labels.
-8. Produce downstream questions.
+1. 记录数据节点状态。
+2. 收集并标准化证据。
+3. 去重，并筛选 AI / public-market 相关内容。
+4. 按来源类型和信号类型分类证据。
+5. 聚类叙事主题。
+6. 构造当前观察版趋势故事。
+7. 构造长期远演版趋势故事，并标注 fact / inference / hypothesis。
+8. 输出交给下游 agent 的问题。
 
-## Alternative Approaches Considered
+## 备选方案
 
-### Standard Only
+### 只写标准文档
 
-This is safest and avoids touching existing prompts, but it leaves the standard abstract. Future migration would still require interpretation.
+这是最稳的方案，不碰现有 prompt。但缺点是标准仍然偏抽象，后续迁移时还需要重新解释。
 
-### Bulk Rewrite
+### 一次性批量重写
 
-This completes the migration quickly, but the repository already has multiple uncommitted changes. Rewriting every agent at once would make review noisy and increase the risk of changing behavior unintentionally.
+这个方案最快完成迁移，但当前仓库已经有不少未提交改动。一次性重写所有 agent 会让 review 变得很吵，也更容易无意中改变 agent 行为。
 
-### Standard Plus Two Examples
+### 标准文档 + 两个示范
 
-This is the recommended path. It creates a concrete pattern while keeping the change small enough to review. After the examples are accepted, the remaining agents can be migrated mechanically.
+这是推荐方案。它既能留下清晰标准，又能给出真实可参考的改造样例，同时保持改动范围足够小。示范通过后，剩下的 agent 可以机械迁移。
 
-## Migration Notes
+## 迁移说明
 
-The two example refactors should preserve all existing content that matters, especially:
+两个示范文件改造时，必须保留现有重要内容，尤其是：
 
-- supported task types in the Intent Router;
-- required output tables;
-- safety boundaries;
-- required source counts;
-- data-node failure handling;
-- two-level current-vs-long-horizon story distinction;
-- no trading/account/position instructions.
+- Intent Router 支持的 task types；
+- 必须输出的表格；
+- 安全边界；
+- 必需来源数量；
+- data-node failure handling；
+- 当前观察版故事和长期远演版故事的双层结构；
+- 禁止交易、账户操作、仓位建议和下单指令。
 
-The refactor may rename `Weekly User Prompt Template` to `Per-Run User Prompt Template` for consistency. If consistency with existing repo language is preferred, both names can appear as:
+可以把 `Weekly User Prompt Template` 统一改名为 `Per-Run User Prompt Template`。如果想兼容现有仓库语言，也可以保留提示：
 
 ```markdown
 ## Per-Run User Prompt Template
 
-Formerly: Weekly User Prompt Template.
+原名：Weekly User Prompt Template。
 ```
 
-## Verification
+## 验证方式
 
-After implementation:
+实施完成后检查：
 
-- Check the two modified agent files still contain:
+- 两个被改造的 agent 文件仍然包含：
   - `Role`;
   - `Profile`;
   - `Mission`;
@@ -190,18 +192,18 @@ After implementation:
   - `Output Schema`;
   - `Hard Limits`;
   - `Per-Run User Prompt Template`.
-- Confirm no `Initialization` section was added.
-- Confirm `agents/README.md` still points to the same prompt files.
-- Confirm the quality gate and safety boundaries are not weakened.
-- Run `rg -n "^## .*Initialization|^## .*初始化" agents docs/structured-agent-prompt-standard.md` and ensure no structured prompt section was added for it.
-- Run `git diff -- agents/08-intent-router.md agents/02-ai-information-sentiment-analyst.md docs/structured-agent-prompt-standard.md` after implementation to review scope.
+- 确认没有新增 `Initialization` / 初始化章节。
+- 确认 `agents/README.md` 仍然指向同样的 prompt 文件。
+- 确认质量门和安全边界没有被削弱。
+- 运行 `rg -n "^## .*Initialization|^## .*初始化" agents docs/structured-agent-prompt-standard.md`，确保没有新增初始化结构章节。
+- 实施后运行 `git diff -- agents/08-intent-router.md agents/02-ai-information-sentiment-analyst.md docs/structured-agent-prompt-standard.md`，检查改动范围。
 
-## Acceptance Criteria
+## 验收标准
 
-- A shared prompt standard exists in `docs/structured-agent-prompt-standard.md`.
-- `agents/08-intent-router.md` follows the standard.
-- `agents/02-ai-information-sentiment-analyst.md` follows the standard.
-- The two example prompts remain functionally equivalent or stricter than before.
-- No live trading, account access, position sizing, order execution, or broker instructions are introduced.
-- No required weekly brief counts or evidence-linking requirements are removed.
-- No `Initialization` section appears in the new standard or example prompts.
+- 存在共享提示词标准文档：`docs/structured-agent-prompt-standard.md`。
+- `agents/08-intent-router.md` 按标准改造完成。
+- `agents/02-ai-information-sentiment-analyst.md` 按标准改造完成。
+- 两个示范 prompt 的行为与改造前等价，或者比改造前更严格。
+- 没有引入 live trading、账户访问、仓位建议、订单执行或 broker 指令。
+- 没有删除周报必需数量要求，也没有删除 evidence-linking 要求。
+- 新标准和示范 prompt 中都没有 `Initialization` / 初始化章节。
