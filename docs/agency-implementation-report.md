@@ -35,6 +35,7 @@
 - Longbridge skills: https://github.com/longbridge/skills
 - Financial Data Collector: https://github.com/daymade/claude-code-skills/tree/main/financial-data-collector
 - Gauss market data skills: https://github.com/gauss314/skills
+- YouTube / TranscriptAPI: `youtube-full` is already installed and backed by TranscriptAPI.com
 - Cathie Wood perspective: local Wood skill from `famous skills/woodSKILL.md`
 - Buffett perspective: previously installed Buffett perspective skill
 
@@ -45,7 +46,7 @@
 | Skill | 作用 |
 |---|---|
 | `last30days` | 近 30 天 Reddit、X、YouTube、HN、Polymarket、GitHub、Web 舆情 |
-| `youtube-full` | YouTube 视频、频道、字幕、评论上下文 |
+| `youtube-full` | TranscriptAPI-backed 主 YouTube skill，覆盖 transcript、search、channel latest、channel videos、playlist videos；配置 `TRANSCRIPT_API_KEY` 即可，不重复安装 ClawHub `transcriptapi` |
 | `bibi` | 长视频、音频、播客摘要 |
 | `ak-rss-digest` | 中文科技/RSS 辅助信号 |
 | `transcript-polisher` | 转录稿清洗和可读化 |
@@ -101,6 +102,7 @@
 
 | 候选 | 当前处理 | 原因 |
 |---|---|---|
+| ClawHub `transcriptapi` | Reject / Duplicate | `youtube-full` 已经是 TranscriptAPI-backed YouTube skill，配置 `TRANSCRIPT_API_KEY` 即可；重复安装会增加调用混乱 |
 | InvestSkill | Watch | 它是很好的美股分析框架，但默认会输出 BUY/HOLD/SELL，与本系统“不输出买卖建议”的边界冲突，需要二次改造后再考虑 |
 | OpenClaw `finance-data` | Watch | 和 `financial-data-collector` + `yahoo-finance` + `sec-data` 重复，暂不增加复杂度 |
 | `alpha-skills` momentum / breadth / bubble detector | Watch | 有市场状态价值，但交易色彩更重，部分 repo 热度未达到当前 Skill Scout benchmark |

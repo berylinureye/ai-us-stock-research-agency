@@ -44,7 +44,7 @@ RSS / YouTube / Podcasts / last30days / GitHub / arXiv / market intel
 ### 信息与舆情
 
 - `last30days`
-- `youtube-full`
+- `youtube-full`：TranscriptAPI-backed 主 YouTube skill，覆盖 transcript / search / channel / playlist；配置 `TRANSCRIPT_API_KEY` 即可，不需要重复安装 ClawHub 的 `transcriptapi` skill
 - `bibi`
 - `ak-rss-digest`
 - `transcript-polisher`
@@ -100,16 +100,38 @@ cp .env.example .env
 
 不要提交 `.env`。仓库已经通过 `.gitignore` 忽略真实密钥文件。
 
-常用可选变量：
+当前推荐 LLM 网关是 Viviai / New API，按 OpenAI-compatible 方式使用：
+
+- `OPENAI_API_KEY`
+- `OPENAI_BASE_URL=https://api.viviai.cc/v1`
+- `OPENAI_MODEL=gpt-5.5`
+- `LLM_MODEL=gpt-5.5`
+- `LLM_FAST_MODEL=gpt-5.4-mini`
+
+`gpt-5.5` 用于最终周报和复杂推理，`gpt-5.4-mini` 用于快速摘要、清洗和低成本子任务。
+
+常用外部数据变量：
 
 - `ALPHA_VANTAGE_API_KEY`
 - `FINNHUB_API_KEY`
 - `FRED_API_KEY`
 - `SEC_EDGAR_USER_AGENT`
 - `OPENAI_API_KEY`
-- `ANTHROPIC_API_KEY`
 - `OPENROUTER_API_KEY`
 - `PERPLEXITY_API_KEY`
+- `TRANSCRIPT_API_KEY`
+- `SCRAPECREATORS_API_KEY`
+- `BIBI_API_TOKEN`
+
+YouTube 说明：
+
+- 本项目已经安装 `youtube-full`，它使用 TranscriptAPI.com，能力覆盖你在 TranscriptAPI onboarding 页面看到的 Agent Skills。
+- 如果页面提示 `Install transcriptapi skill from clawhub and configure it`，在本项目中等价处理是配置 `TRANSCRIPT_API_KEY` 给 `youtube-full`。
+- 不要同时安装重复的 `transcriptapi` skill，除非未来决定用它替换 `youtube-full`。
+
+完整配置清单见：
+
+- [docs/api-configuration.md](docs/api-configuration.md)
 
 Longbridge 通常通过 CLI/MCP 授权，而不是写入 `.env`。本项目只使用 read-only research mode，不请求交易权限。
 

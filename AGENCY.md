@@ -73,7 +73,7 @@ The agency is focused on US-listed equities and AI-related public-market researc
 
 | Layer | Installed Skills | Scope |
 |---|---|---|
-| AI information and sentiment | `last30days`, `youtube-full`, `bibi`, `ak-rss-digest`, `transcript-polisher` | Podcasts, YouTube, RSS/news, community sentiment, transcript cleanup, AI trend evidence |
+| AI information and sentiment | `last30days`, `youtube-full`, `bibi`, `ak-rss-digest`, `transcript-polisher` | Podcasts, YouTube, RSS/news, community sentiment, transcript cleanup, AI trend evidence. `youtube-full` is the TranscriptAPI-backed primary YouTube skill; configure `TRANSCRIPT_API_KEY` instead of installing a duplicate ClawHub `transcriptapi` skill. |
 | Longbridge market data | `longbridge`, `longbridge-market-data`, `longbridge-intel` | Quotes, K-line, market news, catalysts, market intelligence; use read-only data only |
 | Fundamentals | `financial-data-collector`, `longbridge-fundamentals`, `longbridge-earnings`, `longbridge-research`, `longbridge-value-investing`, `sec-data`, `nasdaq-data`, `earningswhispers`, `yahoo-finance`, `finviz`, `alpha-vantage`, `finnhub` | Financial statements, SEC filings, earnings, consensus, valuation, company research, secondary data checks |
 | Technicals and market regime | `technical-analyst`, `longbridge-technical`, `longbridge-market-data`, `tradingview`, `yahoo-finance`, `cboe-data`, `fred-macro`, `finviz` | Chart-first analysis, OHLCV, indicators, support/resistance, volatility, rates, market breadth/proxy context |

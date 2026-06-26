@@ -13,7 +13,7 @@
 - GitHub：明确配置关键词、数量、排序后的项目、release、issue、stars、README。
 - arXiv：明确配置关键词、数量、排序后的论文。
 - `last30days`：近 30 天 Reddit、X、YouTube、Hacker News、Polymarket、GitHub、Web 等舆情和讨论。
-- `youtube-full`：当舆情来自 YouTube 视频、频道、评论或字幕时，用于获取视频内容和上下文。
+- `youtube-full`：TranscriptAPI-backed 主 YouTube skill。当舆情来自 YouTube 视频、频道、评论、字幕、playlist 或 channel latest 时，用于获取视频内容和上下文。配置 `TRANSCRIPT_API_KEY` 即可；不要重复安装同功能的 ClawHub `transcriptapi` skill，除非明确替换 `youtube-full`。
 - `bibi`：用于视频/音频/播客摘要，尤其是需要快速理解长视频或播客时。
 - `ak-rss-digest`：作为中文 AI/科技高信号文章和 RSS 的辅助来源。
 - `transcript-polisher`：用于把长转录稿整理成可读材料，不负责独立判断。
