@@ -8,7 +8,14 @@
 
 ```mermaid
 flowchart TD
-    A["RSS / YouTube / Podcasts / last30days / GitHub / arXiv / Market Intel"] --> B["Stock Discovery Section"]
+    A["User Request"] --> R["Intent Router / Route Plan"]
+    R --> S["Skill Registry / Data Node Map"]
+    S --> B["Stock Discovery Section"]
+    S --> C0["Single-Section Routes"]
+    C0 --> C["AI Information & Sentiment Section"]
+    C0 --> D["Fundamental Section"]
+    C0 --> E["Technical Section"]
+    C0 --> P["Paper Attribution Review"]
     B --> C["AI Information & Sentiment Section"]
     C --> D["Fundamental Section"]
     C --> E["Technical Section"]
@@ -19,14 +26,15 @@ flowchart TD
     H --> I["Paper Portfolio & Attribution Section"]
     I --> J["Weekly Brief Quality Gate"]
     J --> K["Skill Scout Appendix"]
-    K -. "suggested system upgrades" .-> B
+    K -. "suggested system upgrades" .-> S
 ```
 
-核心节奏：先控噪生成候选池，再做信息/基本面/技术面验证，之后由 Reflection 审闭环，最终结论进入 shadow ledger，下周再用价格和 benchmark 做归因。
+核心节奏：先由 Intent Router 判断本次该跑全链路还是单点分析，再控噪生成候选池，之后做信息/基本面/技术面验证。Reflection 审闭环，最终结论进入 shadow ledger，下周再用价格和 benchmark 做归因。
 
 ## 关键理念
 
 - Skills 是数据输入节点，不是最终判断者。
+- 任何周报或实验先输出 Intent Route Plan，再运行对应 agent。
 - 舆情只能识别市场关注和候选叙事，不能证明财务改善。
 - 基本面必须把叙事落到收入、利润、现金流、capex、margin、估值或预期差。
 - 技术面第一轮只看图表，不能被新闻或叙事污染。
@@ -40,6 +48,7 @@ flowchart TD
 
 | Agent | Prompt | 说明文档 | 职责 |
 |---|---|---|---|
+| Intent Router / Harness Router | [Prompt](agents/08-intent-router.md) | [Docs](docs/agent-responsibilities.md#0-intent-router--harness-router) | 根据用户提示词选择任务类型、agent 路径、skills 和质量门槛 |
 | Stock Discovery Analyst | [Prompt](agents/00-stock-discovery-analyst.md) | [Docs](docs/agent-responsibilities.md#0-stock-discovery-analyst) | 候选股票发现、控噪、active/watch/reject 分层 |
 | AI Information & Sentiment Analyst | [Prompt](agents/02-ai-information-sentiment-analyst.md) | [Docs](docs/agent-responsibilities.md#1-ai-information--sentiment-analyst) | 新闻、播客、舆情、GitHub、arXiv、趋势故事草案 |
 | Fundamental Analyst | [Prompt](agents/03-fundamental-analyst.md) | [Docs](docs/agent-responsibilities.md#2-fundamental-analyst) | 美股基本面验证和财务传导链 |
@@ -50,6 +59,13 @@ flowchart TD
 | Skill Scout | [Prompt](agents/06-skill-scout.md) | [Docs](docs/agent-responsibilities.md#7-skill-scout) | 每周 GitHub skills / plugins 升级建议 |
 
 ## 当前已安装 Skill Scopes
+
+完整 skill 用途、API、降级和禁止用途见：[docs/skill-registry.md](docs/skill-registry.md)。
+
+### Intent Router
+
+- `docs/skill-registry.md`
+- installed skill inventory
 
 ### 信息与舆情
 
@@ -143,6 +159,7 @@ YouTube 说明：
 
 - [docs/api-configuration.md](docs/api-configuration.md)
 - [docs/agent-responsibilities.md](docs/agent-responsibilities.md)
+- [docs/skill-registry.md](docs/skill-registry.md)
 
 Longbridge 通常通过 CLI/MCP 授权，而不是写入 `.env`。本项目只使用 read-only research mode，不请求交易权限。
 
@@ -157,18 +174,20 @@ Paper feedback 默认使用 `PAPER_TRADING_MODE=shadow_ledger`，不连接 broke
 - [AGENCY.md](AGENCY.md)
 - [docs/ai-investment-agent-system.md](docs/ai-investment-agent-system.md)
 - [docs/weekly-brief-quality-gate.md](docs/weekly-brief-quality-gate.md)
+- [docs/skill-registry.md](docs/skill-registry.md)
 
 然后按 Harness Agent 流程依次运行：
 
-1. Stock Discovery Section。
-2. AI Information & Sentiment Section。
-3. Fundamental Section。
-4. Technical Section。
-5. Reflection Section。
-6. Final AI Trend Narrative Conclusion。
-7. Paper Portfolio & Attribution Section。
-8. Weekly Brief Quality Gate。
-9. Skill Scout Appendix。
+1. Intent Router，输出 Intent Route Plan。
+2. 如果 Route Plan 是完整周报，运行 Stock Discovery Section。
+3. AI Information & Sentiment Section。
+4. Fundamental Section。
+5. Technical Section。
+6. Reflection Section。
+7. Final AI Trend Narrative Conclusion。
+8. Paper Portfolio & Attribution Section。
+9. Weekly Brief Quality Gate。
+10. Skill Scout Appendix。
 
 ## 质量门槛
 
@@ -197,6 +216,7 @@ Paper feedback 默认使用 `PAPER_TRADING_MODE=shadow_ledger`，不连接 broke
 - [docs/ai-investment-agent-system.md](docs/ai-investment-agent-system.md)：系统设计。
 - [docs/weekly-brief-quality-gate.md](docs/weekly-brief-quality-gate.md)：质量门槛。
 - [docs/agent-responsibilities.md](docs/agent-responsibilities.md)：每个 agent 的职责、输入、输出和边界。
+- [docs/skill-registry.md](docs/skill-registry.md)：每个 skill/data node 的用途、归属 agent、API、降级和禁止用途。
 - [docs/api-configuration.md](docs/api-configuration.md)：API 和模型配置说明。
 - [docs/noise-control-and-paper-portfolio-loop.md](docs/noise-control-and-paper-portfolio-loop.md)：噪音控制和模拟观察闭环。
 - [docs/next-experiment-and-ui-roadmap.md](docs/next-experiment-and-ui-roadmap.md)：下一步实验计划、Stock Discovery scales/API、UI 路线图。
@@ -204,6 +224,6 @@ Paper feedback 默认使用 `PAPER_TRADING_MODE=shadow_ledger`，不连接 broke
 
 ## 状态
 
-当前版本：`v0.2-discovery-feedback-loop`
+当前版本：`v0.3-intent-router`
 
-当前重点：先跑一次最小实验，验证 Stock Discovery 候选池、主研究链路、Paper Portfolio & Attribution 反馈闭环是否可用。
+当前重点：先用 Intent Router 生成 Route Plan，再跑一次最小实验，验证 Stock Discovery 候选池、主研究链路、Paper Portfolio & Attribution 反馈闭环是否可用。

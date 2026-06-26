@@ -20,6 +20,8 @@ source + parameters + limits + sorting + output schema
 
 Final weekly briefs must pass the [Weekly Brief Quality Gate](weekly-brief-quality-gate.md).
 
+Every weekly brief, experiment, and single-section research run starts with the [Intent Router](../agents/08-intent-router.md), which produces a Route Plan before any research agent runs. Detailed skill behavior is defined in the [Skill Registry](skill-registry.md).
+
 The hard minimum source modules in the AI Information & Sentiment Section are:
 - 10 AI technology news items.
 - 5 AI academic papers.
@@ -31,6 +33,7 @@ If any module cannot meet the minimum count, the report must explain which input
 ## Agent Roles
 
 Detailed prompts live in:
+- [Intent Router / Harness Router](../agents/08-intent-router.md)
 - [Stock Discovery Analyst](../agents/00-stock-discovery-analyst.md)
 - [AI Information & Sentiment Analyst](../agents/02-ai-information-sentiment-analyst.md)
 - [Fundamental Analyst](../agents/03-fundamental-analyst.md)
@@ -46,6 +49,7 @@ The current stack is research-only and focused on US-listed equities.
 
 | Layer | Skills | Use |
 |---|---|---|
+| Intent routing | Installed-skill inventory plus `docs/skill-registry.md` | User intent classification, agent path selection, data-node plan, missing configuration, safety boundary check |
 | AI information and sentiment | `last30days`, `youtube-full`, `bibi`, `ak-rss-digest`, `transcript-polisher` | Podcast, video, RSS, community sentiment, transcript cleanup. `youtube-full` is TranscriptAPI-backed and should use `TRANSCRIPT_API_KEY`; do not install duplicate ClawHub `transcriptapi` unless replacing it. |
 | Market data and catalysts | `longbridge`, `longbridge-market-data`, `longbridge-intel`, `nasdaq-data`, `finviz`, `tradingview`, `yahoo-finance` | Quotes, K-line, market attention, screener, news/catalyst context |
 | Fundamentals | `financial-data-collector`, `longbridge-fundamentals`, `longbridge-earnings`, `longbridge-research`, `longbridge-value-investing`, `sec-data`, `nasdaq-data`, `earningswhispers`, `yahoo-finance`, `finviz`, `alpha-vantage`, `finnhub` | Financial statements, SEC filings, earnings, estimates, valuation, company research |
@@ -59,7 +63,21 @@ Each agent is constrained by:
 - A persistent System Prompt for identity, rules, boundaries, output format, and forbidden behavior.
 - A per-run User Prompt template for the concrete weekly task, input sources, filters, and required result.
 
-This is a directed section pipeline, not a roundtable. The final conclusion is produced after stock discovery, information/sentiment, fundamental, technical, and reflection sections are complete. Paper Portfolio & Attribution runs after the final conclusion as a feedback loop.
+This is a directed section pipeline, not a roundtable. The Intent Router selects the path first. The final conclusion is produced after stock discovery, information/sentiment, fundamental, technical, and reflection sections are complete. Paper Portfolio & Attribution runs after the final conclusion as a feedback loop.
+
+### R. Intent Router / Harness Router
+
+Purpose: classify the user's request and produce an Intent Route Plan before any research section runs.
+
+Output:
+- Task type.
+- Selected agents and skipped agents.
+- Skill / data node plan.
+- Missing inputs, API configuration, and default assumptions.
+- Safety boundary check.
+- Applicable quality gate.
+
+Rule: the router does not make investment claims. It only decides what should run and what each section needs.
 
 ### 0. Stock Discovery Analyst
 
@@ -336,7 +354,9 @@ Default recommendation policy:
 ## Weekly Report Flow
 
 ```text
-RSS / GitHub / arXiv / Podcasts / YouTube / last30days
+User request
+  -> Intent Router / Route Plan
+  -> RSS / GitHub / arXiv / Podcasts / YouTube / last30days
   -> data input nodes
   -> Stock Discovery Section
   -> dedupe and normalization
@@ -357,6 +377,7 @@ The "Suggested Add-On Features" section should be separate from the investment t
 Before a final weekly brief is considered complete, it must check:
 
 - Content accuracy: no fabrication, no broken evidence links, no stale information presented as current.
+- Intent routing: route type, selected/skipped agents, skill plan, and missing inputs are explicit.
 - Format completeness: includes AI technology news, AI academic papers, AI open-source projects, and AI information/sentiment evidence.
 - Language style: professional, concise, and similar to a technology intelligence brief.
 - Quantity requirements: at least 10 news items, 5 papers, 5 projects, and 5 high-signal sentiment evidence items.

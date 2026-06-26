@@ -8,7 +8,15 @@
 
 ```mermaid
 flowchart LR
-    A["Data Inputs"] --> B["0. Stock Discovery"]
+    U["User Request"] --> R["0. Intent Router"]
+    R --> A["Selected Data Inputs"]
+    R --> X["Single-Section Route"]
+    A --> B["Stock Discovery"]
+    X --> C["AI Info & Sentiment"]
+    X --> D["Fundamental"]
+    X --> E["Technical"]
+    X --> H["Paper Attribution"]
+    X --> J["Skill Scout"]
     B --> C["1. AI Info & Sentiment"]
     C --> D["2. Fundamental"]
     C --> E["3. Technical"]
@@ -19,6 +27,42 @@ flowchart LR
     H --> I["Next Week Signal Weight Updates"]
     J["7. Skill Scout"] -. "system upgrades" .-> B
 ```
+
+## 0. Intent Router / Harness Router
+
+Prompt：[agents/08-intent-router.md](../agents/08-intent-router.md)
+
+定位：用户意图识别和执行路径控制层。
+
+它解决的问题：
+
+- 同一个系统既能跑完整周报，也能只跑选股、基本面、技术面、归因、Skill Scout 或 UI/文档规划。
+- 在执行前先判断需要哪些 agent，避免所有任务都跑完整链路。
+- 把每个 agent 需要的 skills / data nodes、缺失配置和质量门槛写清楚。
+
+输入：
+
+- 用户原始提示词。
+- 当前日期、时间范围、主题、ticker、来源链接。
+- 当前已安装 skill 列表和 [Skill Registry](skill-registry.md)。
+- API 配置状态，如果已知。
+
+输出：
+
+- Intent Route Plan。
+- Task type。
+- Selected agents / skipped agents。
+- Skill / data node plan。
+- Missing inputs and defaults。
+- Safety boundary check。
+- Quality gate requirements。
+
+边界：
+
+- 不做投资判断。
+- 不新增事实。
+- 不输出买卖建议、目标价、仓位、下单或账户动作。
+- 如果是 UI/文档规划，不运行投资研究 agents。
 
 ## 0. Stock Discovery Analyst
 
@@ -290,10 +334,11 @@ Prompt：[agents/06-skill-scout.md](../agents/06-skill-scout.md)
 
 最小实验不是先做 UI，而是先跑一次完整链路：
 
-1. 给 Stock Discovery 一个主题，例如：`AI inference demand, hyperscaler capex, semiconductor supply chain`。
-2. 让它生成最多 8 个 active candidates。
-3. 后续 agent 只研究这 8 个候选。
-4. Final Trend Narrative 选 3-5 个进入 shadow ledger。
-5. 下周用 Paper Portfolio & Attribution 做价格回看和归因。
+1. 先让 Intent Router 判断任务类型并输出 Intent Route Plan。
+2. 给 Stock Discovery 一个主题和市场边界，例如：`AI inference demand, hyperscaler capex, semiconductor supply chain`，但不强行给固定股票池。
+3. 让 Stock Discovery 自己发现 raw candidates，并生成最多 8 个 active candidates。
+4. 后续 agent 只研究这 8 个候选。
+5. Final Trend Narrative 选 3-5 个进入 shadow ledger。
+6. 下周用 Paper Portfolio & Attribution 做价格回看和归因。
 
 这个闭环跑通后，再做 UI 会更有价值。

@@ -6,6 +6,7 @@ Each agent has two layers:
 2. Weekly User Prompt Template: the concrete task for the current run, including date range, input nodes, filters, and required outputs.
 
 Files:
+- [08-intent-router.md](08-intent-router.md)
 - [00-stock-discovery-analyst.md](00-stock-discovery-analyst.md)
 - [01-ai-trend-narrative-analyst.md](01-ai-trend-narrative-analyst.md)
 - [02-ai-information-sentiment-analyst.md](02-ai-information-sentiment-analyst.md)
@@ -16,6 +17,7 @@ Files:
 - [07-paper-portfolio-attribution-agent.md](07-paper-portfolio-attribution-agent.md)
 
 Core investment research agents:
+- Intent Router / Harness Router Agent
 - Stock Discovery Analyst
 - AI Information & Sentiment Analyst
 - Fundamental Analyst
@@ -31,6 +33,7 @@ Agent scope summary:
 
 | Agent | Primary scopes |
 |---|---|
+| Intent Router | User intent classification, task type selection, agent path, skill/data-node plan, missing configuration, safety boundary check |
 | Stock Discovery | Candidate generation, executive signal, earnings-call signal, capex/customer inference, GitHub/developer adoption, catalysts, market/technical screens, active/watch/reject filtering |
 | AI Information & Sentiment | RSS/news, YouTube/podcasts, `last30days`, GitHub, arXiv, market intel, current observed story, long-horizon story, AI value-chain expansion |
 | Fundamental | `financial-data-collector`, Longbridge fundamentals/earnings/research/value, SEC, Nasdaq, Yahoo, Finviz, Alpha Vantage, Finnhub, earnings data |
@@ -43,7 +46,9 @@ Agent scope summary:
 Default weekly flow:
 
 ```text
-data inputs
+user request
+  -> Intent Router / Route Plan
+  -> data inputs selected by route
   -> Stock Discovery Section
   -> AI Information & Sentiment Section
   -> Fundamental Section
@@ -54,9 +59,10 @@ data inputs
   -> Skill Scout add-on recommendations as a separate appendix
 ```
 
-This is a directed section pipeline, not a roundtable discussion. The Skill Scout section improves the research system and is separate from investment conclusions.
+This is a directed section pipeline, not a roundtable discussion. The Intent Router selects the path before research begins. The Skill Scout section improves the research system and is separate from investment conclusions.
 
 Final weekly briefs must pass [Weekly Brief Quality Gate](../docs/weekly-brief-quality-gate.md):
+- Intent Route Plan with selected/skipped agents and skill plan.
 - 10 AI technology news items.
 - 5 AI academic papers.
 - 5 AI open-source projects.

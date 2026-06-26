@@ -10,6 +10,7 @@ The Harness Agent is the orchestrator.
 
 It is not an investment analyst and should not add a separate opinion. Its job is to:
 
+- Run the Intent Router first and produce a Route Plan.
 - Load the correct agent prompts.
 - Run the sections in the correct order.
 - Pass only the needed upstream artifacts to the next section.
@@ -32,7 +33,9 @@ The Harness Agent must not:
 This is a directed section pipeline, not a roundtable discussion.
 
 ```text
-RSS / YouTube / Podcasts / last30days / GitHub / arXiv / finance / charts / catalysts
+User request
+  -> Intent Router / Route Plan
+  -> RSS / YouTube / Podcasts / last30days / GitHub / arXiv / finance / charts / catalysts
   -> Stock Discovery Section
   -> AI Information & Sentiment Section
   -> Fundamental Section
@@ -45,12 +48,13 @@ RSS / YouTube / Podcasts / last30days / GitHub / arXiv / finance / charts / cata
   -> Skill Scout Appendix
 ```
 
-The final conclusion is produced only after the discovery, information/sentiment, fundamental, technical, and reflection sections are complete or explicitly marked partial. Paper Portfolio & Attribution is a simulated feedback loop over prior research, not a trading system.
+The Intent Router decides whether to run the full pipeline or a narrower route. The final conclusion is produced only after the discovery, information/sentiment, fundamental, technical, and reflection sections are complete or explicitly marked partial. Paper Portfolio & Attribution is a simulated feedback loop over prior research, not a trading system.
 
 ## 2. Canonical Files
 
 Agent prompts:
 
+- `agents/08-intent-router.md`
 - `agents/00-stock-discovery-analyst.md`
 - `agents/02-ai-information-sentiment-analyst.md`
 - `agents/03-fundamental-analyst.md`
@@ -63,6 +67,7 @@ Agent prompts:
 System and quality docs:
 
 - `docs/ai-investment-agent-system.md`
+- `docs/skill-registry.md`
 - `docs/weekly-brief-quality-gate.md`
 - `AGENTS.md`
 - `AGENCY.md`
@@ -77,6 +82,7 @@ The agency is focused on US-listed equities and AI-related public-market researc
 
 | Layer | Installed Skills | Scope |
 |---|---|---|
+| Intent routing | Installed-skill inventory plus `docs/skill-registry.md` | Classifies user intent, selects agent path, lists required data nodes and missing configuration before execution |
 | AI information and sentiment | `last30days`, `youtube-full`, `bibi`, `ak-rss-digest`, `transcript-polisher` | Podcasts, YouTube, RSS/news, community sentiment, transcript cleanup, AI trend evidence. `youtube-full` is the TranscriptAPI-backed primary YouTube skill; configure `TRANSCRIPT_API_KEY` instead of installing a duplicate ClawHub `transcriptapi` skill. |
 | Longbridge market data | `longbridge`, `longbridge-market-data`, `longbridge-intel` | Quotes, K-line, market news, catalysts, market intelligence; use read-only data only |
 | Fundamentals | `financial-data-collector`, `longbridge-fundamentals`, `longbridge-earnings`, `longbridge-research`, `longbridge-value-investing`, `sec-data`, `nasdaq-data`, `earningswhispers`, `yahoo-finance`, `finviz`, `alpha-vantage`, `finnhub` | Financial statements, SEC filings, earnings, consensus, valuation, company research, secondary data checks |
@@ -100,6 +106,41 @@ Do not use or install trading, broker, portfolio-account, auto-order, or positio
 Longbridge skills must be used in read-only research mode. Do not request trade permission, place orders, rebalance portfolios, or retrieve private account data for this agency workflow.
 
 ## 3. Section Contracts
+
+### 3.R Intent Router Section
+
+Prompt file:
+
+`agents/08-intent-router.md`
+
+Purpose:
+
+Classify the user's request before any research section runs. The router chooses the task type, agent path, required skills/data nodes, missing inputs, safety boundaries, and quality gates.
+
+Supported task types:
+
+- `full_weekly_brief`
+- `stock_discovery_only`
+- `information_sentiment_only`
+- `fundamental_deep_dive`
+- `technical_deep_dive`
+- `reflection_only`
+- `paper_attribution_review`
+- `skill_scout_maintenance`
+- `ui_or_docs_planning`
+
+Required output:
+
+- Intent Route Plan.
+- Selected agents and skipped agents.
+- Skill / data node plan.
+- Missing inputs and default assumptions.
+- Safety boundary check.
+- Quality gate requirements.
+
+Hard boundary:
+
+The router does not make investment claims. It only decides what should run next and what evidence each section needs.
 
 ### 3.0 Stock Discovery Section
 
@@ -568,11 +609,23 @@ chart_inputs:
 
 ### Step 1: Initialize Run
 
+Before running any research section, use `agents/08-intent-router.md` to produce an `Intent Route Plan`.
+
+The route plan must specify:
+
+- Task type.
+- Selected agents and skipped agents.
+- Required skills / data nodes.
+- Missing inputs or API configuration.
+- Safety boundaries.
+- Applicable quality gate.
+
 Create a run header:
 
 ```markdown
 # Weekly AI Investment Research Run
 
+- Route plan:
 - Run date:
 - Coverage window:
 - User question:
@@ -580,6 +633,8 @@ Create a run header:
 - Primary topics:
 - Required sources:
 ```
+
+If the task type is `ui_or_docs_planning`, `skill_scout_maintenance`, `technical_deep_dive`, `fundamental_deep_dive`, `reflection_only`, or `paper_attribution_review`, follow the narrower route and do not run unrelated investment research agents.
 
 ### Step 2: Run Stock Discovery Section
 
@@ -614,7 +669,7 @@ Use `agents/03-fundamental-analyst.md`.
 Input only:
 
 - Information/sentiment section.
-- Ticketers and financial data.
+- Tickers and financial data.
 
 Do not give it raw social sentiment as proof.
 
@@ -689,6 +744,8 @@ Do not mix Skill Scout findings into investment thesis.
 ## 6. Quality Gate
 
 The final brief must pass `docs/weekly-brief-quality-gate.md`.
+
+Every weekly brief or experiment must also include the initial Intent Route Plan, or explicitly state why routing was not applicable.
 
 ### Required Counts
 
@@ -772,6 +829,8 @@ Never fill a missing slot with invented content.
 ```markdown
 # 每周 AI 投资研究简报
 
+## 0. Intent Route Plan
+
 ## 运行信息
 - 日期：
 - 覆盖时间：
@@ -825,10 +884,10 @@ Use this in the next chat when you want to execute the system:
 - last30days sentiment queries
 
 要求：
-- 先跑 AI 信息与舆情 Section。
-- 再跑基本面 Section。
-- 再跑技术面 Section。
-- 再跑 Reflection Section，并加载 Cathie Wood / Buffett perspective skills 做双视角辩论。
+- 先运行 Intent Router，输出 Intent Route Plan。
+- 如果 Route Plan 判断为完整周报，先跑 Stock Discovery，不强制使用固定股票池。
+- 再按 Route Plan 运行 AI 信息与舆情、基本面、技术面、Reflection、最终趋势结论和 Paper Attribution。
+- Reflection Section 加载 Cathie Wood / Buffett perspective skills 做双视角辩论。
 - 最后输出最终 AI 趋势投资研究结论。
 - Skill Scout 只作为独立附录。
 - 必须执行质量检查；数据不足不能编造，必须标注 partial / failed。

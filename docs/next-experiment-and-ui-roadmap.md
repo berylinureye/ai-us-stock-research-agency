@@ -16,7 +16,8 @@ AI inference demand + hyperscaler capex + semiconductor / data center supply cha
 
 - 高管/大佬：Jensen Huang、Lisa Su、Intel CEO、Satya Nadella、Sundar Pichai、Andy Jassy、Mark Zuckerberg、Sam Altman。
 - 节目/来源：All-In、No Priors、company keynotes、earnings call clips、GTC/Computex/keynote videos。
-- 初始股票池：NVDA、AMD、AVGO、MU、TSM、ASML、ANET、SMCI、DELL、VRT、ETN、CEG、MSFT、GOOGL、AMZN、META、ORCL。
+- 市场范围：美股上市公司和 ADR。
+- 可选 anchor / benchmark：NVDA、AMD、AVGO、MU、TSM、ASML、ANET、SMCI、DELL、VRT、ETN、CEG、MSFT、GOOGL、AMZN、META、ORCL。它们只用于行业参照，不默认进入候选池。
 
 第一次运行目标不是预测，而是检查：
 
@@ -32,7 +33,7 @@ AI inference demand + hyperscaler capex + semiconductor / data center supply cha
 可以在新线程直接说：
 
 ```text
-请读取本仓库的 AGENCY.md、README.md、docs/agent-responsibilities.md、docs/weekly-brief-quality-gate.md。
+请读取本仓库的 AGENCY.md、README.md、docs/agent-responsibilities.md、docs/skill-registry.md、docs/weekly-brief-quality-gate.md。
 
 本周运行一个最小实验：
 
@@ -50,12 +51,20 @@ AI inference demand + hyperscaler capex + semiconductor / data center supply cha
 - Andy Jassy
 - Mark Zuckerberg
 
-初始股票池：
+市场范围：
+- 美股上市公司和 ADR
+- 优先考虑流动性充足、信息披露充分、与 AI 产业链有明确关系的公司
+- 不研究加密货币、期权、私募公司、低流动性 penny stocks
+
+可选 anchor / benchmark：
 - NVDA, AMD, AVGO, MU, TSM, ASML, ANET, SMCI, DELL, VRT, ETN, CEG, MSFT, GOOGL, AMZN, META, ORCL
+- 这些 ticker 只作为行业参照和 benchmark，不默认进入候选池
 
 要求：
-- 先运行 Stock Discovery，最多 8 个 active candidates。
-- 再按 AGENCY.md 跑 AI Information & Sentiment、Fundamental、Technical、Reflection、Final Trend。
+- 先运行 Intent Router，输出 Intent Route Plan。
+- Stock Discovery 不使用固定初始股票池，必须自己发现 10-15 个 raw candidates。
+- Stock Discovery 最多筛出 8 个 active candidates。
+- 再按 Route Plan 跑 AI Information & Sentiment、Fundamental、Technical、Reflection、Final Trend。
 - 最后选 3-5 个进入 Paper Observation Ledger。
 - 不输出买卖建议、目标价、仓位。
 ```

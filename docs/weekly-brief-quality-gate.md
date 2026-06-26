@@ -8,17 +8,19 @@ The brief is not considered complete unless every checklist item below is explic
 
 The final brief must include all core source modules:
 
-0. Stock discovery candidate funnel.
-1. AI technology news.
-2. AI academic papers.
-3. AI open-source projects.
-4. AI information and sentiment evidence.
-5. Paper portfolio and attribution status when prior observations exist.
+1. Intent Route Plan.
+2. Stock discovery candidate funnel.
+3. AI technology news.
+4. AI academic papers.
+5. AI open-source projects.
+6. AI information and sentiment evidence.
+7. Paper portfolio and attribution status when prior observations exist.
 
 Minimum quantity:
 
 | Module | Required Count | Minimum Source Requirement |
 |---|---:|---|
+| Intent Route Plan | 1 | task type, selected agents, skipped agents, skill plan, missing inputs, safety boundary |
 | AI technology news | 10 | title, source, date, link |
 | AI academic papers | 5 | title, authors or institution if available, date, link |
 | AI open-source projects | 5 | repo name, link, stars or benchmark evidence |
@@ -31,6 +33,8 @@ If a module cannot reach the required count, the brief must say so and explain w
 
 Before publishing the final brief, verify:
 
+- The Intent Route Plan matches the user's request and does not run unrelated agents.
+- Skipped agents have clear reasons and re-run triggers.
 - No fabricated article, paper, project, company, ticker, quote, or link.
 - No broken or missing links for items used as evidence.
 - No stale information presented as current.
@@ -44,6 +48,7 @@ Before publishing the final brief, verify:
 
 The final brief must include:
 
+- Intent Route Plan.
 - AI technology news section with 10 items.
 - AI academic papers section with 5 items.
 - AI open-source projects section with 5 items.
@@ -80,6 +85,7 @@ For every data-input node used, record whether it successfully returned data:
 
 | Input Node | Expected Output | Status | Notes |
 |---|---|---|---|
+| Intent Router | task type / selected agents / skill plan | success / partial / failed |  |
 | RSS/news | AI technology news | success / partial / failed |  |
 | arXiv/papers | AI academic papers | success / partial / failed |  |
 | GitHub | AI open-source projects | success / partial / failed |  |
@@ -103,7 +109,14 @@ If a node fails, do not silently continue as if data exists. Mark the affected c
   - 是否有编造：
   - 是否有错链：
   - 是否有过时信息：
+- Router 路由：通过 / 部分通过 / 未通过
+  - Task type 是否正确：
+  - Selected agents 是否匹配用户请求：
+  - Skipped agents 是否有理由：
+  - Skill plan 是否清楚：
+  - 缺失输入/API 是否标明：
 - 格式完整性：通过 / 部分通过 / 未通过
+  - Intent Route Plan：有 / 无
   - AI 技术新闻：{count}/10
   - AI 学术论文：{count}/5
   - AI 开源项目：{count}/5
@@ -126,6 +139,7 @@ If a node fails, do not silently continue as if data exists. Mark the affected c
   - 论文：
   - 项目：
 - 工具调用：通过 / 部分通过 / 未通过
+  - Intent Router：
   - RSS/news：
   - arXiv：
   - GitHub：
