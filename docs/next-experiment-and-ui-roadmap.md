@@ -65,8 +65,10 @@ AI inference demand + hyperscaler capex + semiconductor / data center supply cha
 - Stock Discovery 不使用固定初始股票池，必须自己发现 10-15 个 raw candidates。
 - Stock Discovery 最多筛出 8 个 active candidates。
 - 再按 Route Plan 跑 AI Information & Sentiment、Fundamental、Technical、Reflection、Final Trend。
-- 最后选 3-5 个进入 Paper Observation Ledger。
-- 不输出买卖建议、目标价、仓位。
+- Final Trend 必须输出研究型 action rating、confidence 和 Top 5 Research Action Pool。
+- 只有 confidence >=75 且无重大 Reflection 断裂的 `Research Buy` 可以进入 Top 5。
+- Top 5 进入 Paper Observation Ledger，用于下周归因。
+- 不输出目标价、仓位、下单或账户动作。
 ```
 
 ## 3. Stock Discovery 需要再加 scales 吗

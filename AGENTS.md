@@ -9,8 +9,8 @@ When adding or changing agent prompts:
 - Treat plugins and skills as data-input nodes, not as final reasoning authorities.
 - Every agent must have a long-lived system prompt and a per-run user prompt template.
 - Each prompt must define role, input sources, filtering rules, output schema, and hard limits.
-- Any weekly brief, experiment, or single-section research run must start with an Intent Route Plan from `agents/08-intent-router.md`.
-- Keep investment output research-oriented. Do not add auto-trading, account actions, or order execution.
+- Any weekly brief, experiment, or single-section research run must run an Intent Route Plan from `agents/08-intent-router.md` before research begins, but the published report must start with the Boss Decision Page; place the Route Plan in an appendix.
+- Keep investment output research-oriented. Final conclusions may include research action ratings, but do not add auto-trading, account actions, order execution, personalized position sizing, or broker instructions.
 - The installed finance stack is for US equity research in read-only mode. Do not request trade permissions, place orders, rebalance portfolios, or retrieve private account data.
 - Separate evidence from inference. Every investment claim should identify its source type or state that it is an assumption.
 - Separate current observed stories from long-horizon projections. Long-horizon projections must label fact, inference, and hypothesis.

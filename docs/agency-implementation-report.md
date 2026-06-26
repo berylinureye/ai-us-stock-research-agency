@@ -103,7 +103,7 @@
 | 候选 | 当前处理 | 原因 |
 |---|---|---|
 | ClawHub `transcriptapi` | Reject / Duplicate | `youtube-full` 已经是 TranscriptAPI-backed YouTube skill，配置 `TRANSCRIPT_API_KEY` 即可；重复安装会增加调用混乱 |
-| InvestSkill | Watch | 它是很好的美股分析框架，但默认会输出 BUY/HOLD/SELL，与本系统“不输出买卖建议”的边界冲突，需要二次改造后再考虑 |
+| InvestSkill | Watch | 它是很好的美股分析框架，但默认 BUY/HOLD/SELL 需要二次改造成研究型 action rating，并禁止目标价、仓位、下单和账户动作 |
 | OpenClaw `finance-data` | Watch | 和 `financial-data-collector` + `yahoo-finance` + `sec-data` 重复，暂不增加复杂度 |
 | `alpha-skills` momentum / breadth / bubble detector | Watch | 有市场状态价值，但交易色彩更重，部分 repo 热度未达到当前 Skill Scout benchmark |
 | broker / portfolio / auto-trader skills | Reject | 会引入下单、账户、仓位、自动交易风险 |
@@ -248,7 +248,7 @@ RSS / YouTube / Podcasts / last30days / GitHub / arXiv / market intel
 - 技术面必须记录数据源、周期、时间戳、延迟状态。
 - Reflection 必须指出最弱一环。
 - Wood/Buffett 辩论必须只使用上游事实，不新增事实。
-- 最终结论不得输出买卖建议、目标价、仓位或交易动作。
+- 最终结论可以输出研究型 action rating、置信度和 Top 5 Research Action Pool；不得输出目标价、仓位、下单或账户动作。
 
 ## 7. 资深研究视角把关
 

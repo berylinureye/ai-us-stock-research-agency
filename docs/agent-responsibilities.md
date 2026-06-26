@@ -251,18 +251,28 @@ Prompt：[agents/01-ai-trend-narrative-analyst.md](../agents/01-ai-trend-narrati
 
 输出：
 
+- 老板决策页。
+- Top 5 Research Action Pool。
+- 核心判断与硬证据表。
+- 按证据强度分层的研究排序。
 - 本周结论。
 - 当前观察到的 AI 趋势故事。
 - 长期远演版 AI 趋势展望。
 - 结论矩阵。
 - 投资影响地图。
 - 风险和反证。
+- 研究型 action rating：Research Buy / Hold-Watch / Avoid-Sell Bias / No Rating。
 
 边界：
 
+- 这是内部投资研究老板看的最终结论稿，不是流程审计或资料仓库。
+- 必须结论先行；发布报告不得把 Intent Route Plan、运行边界、数据节点状态、工具失败、质量检查放在主结论之前。
+- 第一屏必须给出主结论、第一梯队/第二梯队/观察层/暂不纳入主线、最大证伪风险和下周验证。
+- 每个高置信度判断必须配 2-3 条最硬证据，长表格和过程细节后置。
+- 只有置信度 >=75 且没有重大 Reflection 断裂的 `Research Buy` 可以进入 Top 5 Research Action Pool。
 - 不直接抓原始数据，除非上游缺失关键上下文。
 - 长期远演必须标注为场景推演或观察清单。
-- 不输出目标价、买卖建议、仓位。
+- 可以输出研究型买卖倾向和置信度；不输出目标价、仓位、下单或账户动作。
 
 ## 6. Paper Portfolio & Attribution Agent
 
@@ -334,7 +344,7 @@ Prompt：[agents/06-skill-scout.md](../agents/06-skill-scout.md)
 
 最小实验不是先做 UI，而是先跑一次完整链路：
 
-1. 先让 Intent Router 判断任务类型并输出 Intent Route Plan。
+1. 先让 Intent Router 判断任务类型并生成 Intent Route Plan，但最终发布报告把 Route Plan 放附录。
 2. 给 Stock Discovery 一个主题和市场边界，例如：`AI inference demand, hyperscaler capex, semiconductor supply chain`，但不强行给固定股票池。
 3. 让 Stock Discovery 自己发现 raw candidates，并生成最多 8 个 active candidates。
 4. 后续 agent 只研究这 8 个候选。

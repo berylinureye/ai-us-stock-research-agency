@@ -2,7 +2,7 @@
 
 这是一个面向 AI 产业趋势和美股投资研究的多 Agent 工作流。
 
-它不会自动交易，不会下单，不会给仓位建议。它的目标是每周把 AI 科技新闻、播客、舆情、GitHub、论文、美股基本面和技术面数据组织成一份可审查的研究报告。
+它不会自动交易，不会下单，不会给仓位建议。它可以在最终结论里给出研究型买卖倾向和置信度，用于 Top 5 观察池和下周归因。它的目标是每周把 AI 科技新闻、播客、舆情、GitHub、论文、美股基本面和技术面数据组织成一份可审查的研究报告。
 
 ## 核心链路
 
@@ -34,7 +34,7 @@ flowchart TD
 ## 关键理念
 
 - Skills 是数据输入节点，不是最终判断者。
-- 任何周报或实验先输出 Intent Route Plan，再运行对应 agent。
+- 任何周报或实验先运行 Intent Route Plan，再运行对应 agent；但发布报告第一屏必须是老板决策页，Route Plan 放附录。
 - 舆情只能识别市场关注和候选叙事，不能证明财务改善。
 - 基本面必须把叙事落到收入、利润、现金流、capex、margin、估值或预期差。
 - 技术面第一轮只看图表，不能被新闻或叙事污染。
@@ -42,7 +42,7 @@ flowchart TD
 - 长期远演可以大胆，但必须标注事实、推断和长期假设。
 - Stock Discovery 负责控噪，每周默认最多 8 个 active candidates。
 - Paper Portfolio & Attribution 用 shadow ledger 做研究反馈，不连接真实账户、不下单。
-- 最终报告不输出买卖建议、目标价、仓位或自动交易动作。
+- 最终报告可以输出研究型 `Research Buy / Hold-Watch / Avoid-Sell Bias / No Rating`，但不输出目标价、仓位、下单或自动交易动作。
 
 ## Agent 双链接索引
 
@@ -189,10 +189,18 @@ Paper feedback 默认使用 `PAPER_TRADING_MODE=shadow_ledger`，不连接 broke
 9. Weekly Brief Quality Gate。
 10. Skill Scout Appendix。
 
+最终发布报告必须先输出给内部投资研究老板看的老板决策页：主结论、Top 5 Research Action Pool、研究动作、最硬证据、最大证伪风险和下周验证。Intent Route Plan、运行边界、数据节点状态、工具失败和质量检查必须后置到附录。
+
+最终结论必须给每个核心候选一个研究型 action rating 和 0-100 置信度。默认只有置信度 `>=75` 且信息/基本面/技术面/Reflection 没有重大断裂的标的，才能进入 Top 5 Research Action Pool。这个池只进入 shadow ledger 和下周归因，不代表真实下单。
+
 ## 质量门槛
 
 最终周报必须包含：
 
+- 老板决策页，且位于发布报告最前面。
+- 核心判断与 2-3 条硬证据。
+- 按证据强度分层的研究排序。
+- Top 5 Research Action Pool：研究型买卖倾向、置信度、进入理由、失效条件。
 - 10 条 AI 技术新闻。
 - 5 篇 AI 学术论文。
 - 5 个 AI 开源项目。

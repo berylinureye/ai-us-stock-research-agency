@@ -20,7 +20,7 @@ source + parameters + limits + sorting + output schema
 
 Final weekly briefs must pass the [Weekly Brief Quality Gate](weekly-brief-quality-gate.md).
 
-Every weekly brief, experiment, and single-section research run starts with the [Intent Router](../agents/08-intent-router.md), which produces a Route Plan before any research agent runs. Detailed skill behavior is defined in the [Skill Registry](skill-registry.md).
+Every weekly brief, experiment, and single-section research run starts internally with the [Intent Router](../agents/08-intent-router.md), which produces a Route Plan before any research agent runs. The published report must still start with the Boss Decision Page; put the Route Plan in an appendix. Detailed skill behavior is defined in the [Skill Registry](skill-registry.md).
 
 The hard minimum source modules in the AI Information & Sentiment Section are:
 - 10 AI technology news items.
@@ -210,6 +210,10 @@ Inputs:
 - Wood vs Buffett debate summary.
 
 Output:
+- Boss conclusion page.
+- Top 5 Research Action Pool.
+- Core judgment table with hard evidence.
+- Research tiering by evidence strength.
 - Final weekly conclusion.
 - Current observed AI trend story.
 - Long-horizon AI trend projection.
@@ -217,8 +221,16 @@ Output:
 - Downgraded stories.
 - Investment impact map.
 - Risks,反证条件, and next-week checks.
+- Research action rating: Research Buy / Hold-Watch / Avoid-Sell Bias / No Rating.
 
-Rule: this is the final synthesis layer. It should not behave like another raw data collector.
+Rule: this is the final synthesis layer. It should not behave like another raw data collector, evidence dump, or process audit.
+
+Output boundary:
+- The published report begins with a conclusion-first Boss Decision Page. The Intent Route Plan is generated first internally but appears later as an appendix.
+- The first page states the main judgment, first-tier/second-tier/observation/excluded candidates, highest-conviction evidence, largest falsification risk, and next-week validation.
+- The final synthesis may output research action ratings with 0-100 confidence. Only `Research Buy` candidates with confidence >=75 and no major Reflection break can enter the Top 5 Research Action Pool.
+- Data-node status, tool failures, route details, and quality checklists are required but must be placed after the main conclusion and core evidence chain as appendices.
+- High-conviction claims need 2-3 hard evidence points. Weakly supported stories must be downgraded, deferred, or excluded.
 
 ### Maintenance Agent: Skill Scout
 
@@ -379,6 +391,8 @@ Before a final weekly brief is considered complete, it must check:
 - Content accuracy: no fabrication, no broken evidence links, no stale information presented as current.
 - Intent routing: route type, selected/skipped agents, skill plan, and missing inputs are explicit.
 - Format completeness: includes AI technology news, AI academic papers, AI open-source projects, and AI information/sentiment evidence.
+- Executive readability: starts with the Boss Decision Page, not the Intent Route Plan, process status, or raw evidence tables.
+- Actionability: includes research action ratings, confidence scores, and Top 5 eligibility without giving order execution, position sizing, or account instructions.
 - Language style: professional, concise, and similar to a technology intelligence brief.
 - Quantity requirements: at least 10 news items, 5 papers, 5 projects, and 5 high-signal sentiment evidence items.
 - Noise control: active research candidates are capped at 8 unless explicitly overridden.
