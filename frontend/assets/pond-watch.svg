@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 84" role="img" aria-labelledby="title desc">
+  <title id="title">Watch pond market visual</title>
+  <desc id="desc">A compact market watch graphic with a price line and ticker tiles.</desc>
+  <defs>
+    <linearGradient id="panel" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#172029"/>
+      <stop offset="1" stop-color="#080b0d"/>
+    </linearGradient>
+    <linearGradient id="line" x1="12" x2="108" y1="60" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#62b7ff"/>
+      <stop offset="1" stop-color="#72e0a7"/>
+    </linearGradient>
+  </defs>
+  <rect x="1.5" y="1.5" width="117" height="81" rx="12" fill="url(#panel)" stroke="#34414a" stroke-width="3"/>
+  <path d="M16 62H104M16 44H104M16 26H104M32 16V68M56 16V68M80 16V68" stroke="#ffffff" stroke-opacity=".08" stroke-width="2"/>
+  <path d="M16 58C25 55 29 47 38 48C48 49 51 61 61 57C72 53 72 35 84 34C94 33 98 25 106 21" fill="none" stroke="url(#line)" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="84" cy="34" r="5" fill="#72e0a7"/>
+  <rect x="14" y="12" width="28" height="14" rx="4" fill="#62b7ff" fill-opacity=".16" stroke="#62b7ff" stroke-opacity=".28"/>
+  <rect x="46" y="12" width="28" height="14" rx="4" fill="#ffffff" fill-opacity=".06" stroke="#ffffff" stroke-opacity=".14"/>
+  <rect x="78" y="12" width="28" height="14" rx="4" fill="#72e0a7" fill-opacity=".14" stroke="#72e0a7" stroke-opacity=".28"/>
+  <text x="28" y="22" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="7" font-weight="800" fill="#dff3ff">OPEN</text>
+  <text x="60" y="22" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="7" font-weight="800" fill="#cbd2d9">CLOSE</text>
+  <text x="92" y="22" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="7" font-weight="800" fill="#d8ffe8">MATCH</text>
+</svg>

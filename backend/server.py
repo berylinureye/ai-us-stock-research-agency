@@ -19,6 +19,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote
 
 try:
     import requests
@@ -28,6 +29,49 @@ except ImportError:  # pragma: no cover - surfaced via health/error response
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PORT = 8787
+DEFAULT_RESEARCH_INTENT = "请先按美股全市场周报流程做一次机会扫描，默认发现最多 8 个候选，输出中文研究周报和双跳证据。"
+FALLBACK_RESEARCH_UNIVERSES: dict[str, list[dict[str, str]]] = {
+    "consumer": [
+        {"ticker": "WMT", "company": "Walmart", "why": "零售与必需消费需求验证入口"},
+        {"ticker": "COST", "company": "Costco", "why": "会员制零售与消费韧性验证入口"},
+        {"ticker": "PG", "company": "Procter & Gamble", "why": "日用品与定价权验证入口"},
+        {"ticker": "KO", "company": "Coca-Cola", "why": "饮料与品牌现金流验证入口"},
+        {"ticker": "PEP", "company": "PepsiCo", "why": "食品饮料与渠道库存验证入口"},
+        {"ticker": "MCD", "company": "McDonald's", "why": "餐饮消费与客流验证入口"},
+        {"ticker": "HD", "company": "Home Depot", "why": "家装与地产后周期验证入口"},
+        {"ticker": "NKE", "company": "Nike", "why": "可选消费与品牌库存验证入口"},
+    ],
+    "ai": [
+        {"ticker": "NVDA", "company": "NVIDIA", "why": "AI 加速器与数据中心资本开支验证入口"},
+        {"ticker": "MSFT", "company": "Microsoft", "why": "云与企业 AI 落地验证入口"},
+        {"ticker": "AVGO", "company": "Broadcom", "why": "AI 网络与定制芯片验证入口"},
+        {"ticker": "AMD", "company": "AMD", "why": "AI GPU 竞争格局验证入口"},
+        {"ticker": "TSM", "company": "TSMC", "why": "先进制程与供应链验证入口"},
+        {"ticker": "ASML", "company": "ASML", "why": "半导体设备周期验证入口"},
+        {"ticker": "GOOGL", "company": "Alphabet", "why": "AI 搜索、云和广告传导验证入口"},
+        {"ticker": "AMZN", "company": "Amazon", "why": "云基础设施与 AI 应用需求验证入口"},
+    ],
+    "finance": [
+        {"ticker": "JPM", "company": "JPMorgan Chase", "why": "大型银行信贷与净息差验证入口"},
+        {"ticker": "BAC", "company": "Bank of America", "why": "利率敏感性与消费信贷验证入口"},
+        {"ticker": "GS", "company": "Goldman Sachs", "why": "投行业务与风险偏好验证入口"},
+        {"ticker": "MS", "company": "Morgan Stanley", "why": "财富管理与投行业务验证入口"},
+        {"ticker": "V", "company": "Visa", "why": "支付量与跨境消费验证入口"},
+        {"ticker": "MA", "company": "Mastercard", "why": "支付网络与消费强度验证入口"},
+        {"ticker": "AXP", "company": "American Express", "why": "高端消费与信用质量验证入口"},
+        {"ticker": "BLK", "company": "BlackRock", "why": "资产管理资金流验证入口"},
+    ],
+    "broad": [
+        {"ticker": "MSFT", "company": "Microsoft", "why": "大型科技与企业软件验证入口"},
+        {"ticker": "NVDA", "company": "NVIDIA", "why": "AI 与半导体景气验证入口"},
+        {"ticker": "AMZN", "company": "Amazon", "why": "云、零售和消费需求验证入口"},
+        {"ticker": "GOOGL", "company": "Alphabet", "why": "广告、云与 AI 应用验证入口"},
+        {"ticker": "META", "company": "Meta Platforms", "why": "广告与 AI 推荐系统验证入口"},
+        {"ticker": "JPM", "company": "JPMorgan Chase", "why": "金融与信贷周期验证入口"},
+        {"ticker": "COST", "company": "Costco", "why": "消费韧性验证入口"},
+        {"ticker": "LLY", "company": "Eli Lilly", "why": "医疗创新与防御成长验证入口"},
+    ],
+}
 AGENT_WORKFLOW = [
     ("intent_router", "Intent Router", "agents/08-intent-router.md"),
     ("stock_discovery", "Stock Discovery", "agents/00-stock-discovery-analyst.md"),
@@ -39,6 +83,7 @@ AGENT_WORKFLOW = [
     ("paper_attribution", "Paper Attribution", "agents/07-paper-portfolio-attribution-agent.md"),
 ]
 POND_DIR = ROOT / "data" / "conclusion-pool"
+REPORT_HISTORY_DIR = Path(os.environ.get("REPORT_HISTORY_DIR") or ROOT / "data" / "report-history")
 POND_STATUSES = {"candidate", "open", "closed", "archived", "price_data_failed"}
 POND_COLUMNS = [
     "run_id",
@@ -118,6 +163,43 @@ def configured_base_url() -> str:
 
 def configured_model() -> str:
     return env("OPENAI_MODEL") or env("LLM_MODEL") or "gpt-5.5"
+
+
+def request_user_prompt(body: dict[str, Any]) -> str:
+    prompt = body.get("prompt") or body.get("user_prompt") or body.get("intent") or ""
+    return str(prompt).strip() or DEFAULT_RESEARCH_INTENT
+
+
+def fallback_universe_key(user_prompt: str) -> str:
+    prompt = str(user_prompt or "").lower()
+    if re.search(r"消费|consumer|retail|staple|discretionary|传统|食品|饮料|零售|餐饮|品牌", prompt, re.IGNORECASE):
+        return "consumer"
+    if re.search(r"金融|银行|支付|保险|券商|finance|bank|payment|credit", prompt, re.IGNORECASE):
+        return "finance"
+    if re.search(r"\bai\b|人工智能|半导体|芯片|算力|数据中心|gpu|云|软件|科技|semiconductor", prompt, re.IGNORECASE):
+        return "ai"
+    return "broad"
+
+
+def fallback_research_universe(user_prompt: str) -> list[dict[str, str]]:
+    return [dict(item) for item in FALLBACK_RESEARCH_UNIVERSES[fallback_universe_key(user_prompt)]]
+
+
+def fallback_universe_markdown(user_prompt: str) -> str:
+    rows = [
+        "| Ticker | Company | Why included | Source Type |",
+        "|---|---|---|---|",
+    ]
+    for item in fallback_research_universe(user_prompt):
+        rows.append(
+            "| {ticker} | {company} | {why} | fallback_seed_universe，"
+            "仅作研究脚手架；不是模型发现结论、买卖建议或实时数据。 |".format(**item)
+        )
+    return "\n".join(rows)
+
+
+def fallback_ticker_list(user_prompt: str) -> str:
+    return ", ".join(item["ticker"] for item in fallback_research_universe(user_prompt))
 
 
 def redact_url(value: str) -> str:
@@ -592,6 +674,19 @@ TRACE_DATA_NODE_PATTERNS = [
     ("Paper ledger", r"paper|ledger|shadow|归因|复盘|观察账本"),
 ]
 
+UNHELPFUL_DEFERRAL_PATTERNS = [
+    r"当前无\s*ticker",
+    r"当前无候选",
+    r"无候选可",
+    r"等待上游",
+    r"请先等待",
+    r"没有上游股票池",
+    r"不能输出\s*active\s+research\s+candidates",
+    r"暂无输出",
+    r"no\s+ticker",
+    r"no\s+candidate",
+]
+
 
 TRACE_AGENT_DEFAULTS = {
     "Intent Router": {
@@ -641,6 +736,15 @@ def clean_trace_text(text: str) -> str:
     return text.strip()
 
 
+def is_unhelpful_deferral_text(text: str) -> bool:
+    value = str(text or "")
+    return any(re.search(pattern, value, re.IGNORECASE) for pattern in UNHELPFUL_DEFERRAL_PATTERNS)
+
+
+def remove_unhelpful_deferral_items(items: list[str]) -> list[str]:
+    return [item for item in items if not is_unhelpful_deferral_text(item)]
+
+
 def split_trace_sentences(text: str, limit: int = 6) -> list[str]:
     cleaned = clean_trace_text(text)
     if not cleaned:
@@ -652,6 +756,8 @@ def split_trace_sentences(text: str, limit: int = 6) -> list[str]:
         if len(item) < 8:
             continue
         if item.lower() in {"complete", "partial", "failed"}:
+            continue
+        if is_unhelpful_deferral_text(item):
             continue
         sentences.append(item[:180])
         if len(sentences) >= limit:
@@ -668,6 +774,8 @@ def extract_trace_bullets(markdown: str, limit: int = 4) -> list[str]:
             continue
         item = clean_trace_text(match.group(1))
         if len(item) < 8:
+            continue
+        if is_unhelpful_deferral_text(item):
             continue
         bullets.append(item[:180])
         if len(bullets) >= limit:
@@ -710,8 +818,12 @@ def build_agent_trace(
     status = infer_section_status(markdown)
     bullets = extract_trace_bullets(markdown, limit=4)
     sentences = split_trace_sentences(markdown, limit=5)
+    if not bullets:
+        bullets = section_output_focus(section_name)[:3]
     headline = bullets[0] if bullets else (sentences[0] if sentences else f"{section_name} 已生成公开思考摘要。")
-    judgment = sentences[1] if len(sentences) > 1 else headline
+    judgment = sentences[1] if len(sentences) > 1 else (
+        f"{section_name} 已产出可继续验证的研究输出，候选入口为 {fallback_ticker_list(user_prompt)}。"
+    )
     next_step = defaults.get("next") or "把本 section 的结论交给下一层 agent 继续验证。"
     trace: dict[str, Any] = {
         "agent": section_name,
@@ -1129,6 +1241,141 @@ def normalize_payload(value: Any) -> dict[str, Any]:
     return payload
 
 
+def error_report_payload(message: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
+    user_prompt = request_user_prompt(body or {}) if body is not None else DEFAULT_RESEARCH_INTENT
+    report = f"# 研究未完成\n\n后端运行失败：{message}"
+    return {
+        "title": "研究未完成",
+        "summaryMarkdown": report,
+        "reportMarkdown": report,
+        "evidenceMarkdown": "# 证据包：研究未完成\n\n## Data Node Status\n- Backend：failed",
+        "researchActionPool": [],
+        "runMetadata": {
+            "runId": datetime.now().strftime("failed-%Y%m%d-%H%M%S-%f"),
+            "source": "backend_error",
+            "userPrompt": user_prompt,
+        },
+    }
+
+
+def report_history_status(payload: dict[str, Any]) -> str:
+    report = safe_text(payload.get("reportMarkdown"))
+    title = safe_text(payload.get("title"))
+    if "研究未完成" in title or "后端运行失败" in report:
+        return "failed"
+    lowered = report.lower()
+    if re.search(r"(section\s*状态|状态)\s*[:：]\s*`?\s*failed", lowered, re.IGNORECASE):
+        return "partial"
+    if re.search(r"(partial|数据节点不足|缺口|未接入|failed)", report, re.IGNORECASE):
+        return "partial"
+    return "complete"
+
+
+def report_history_slug(value: str) -> str:
+    text = re.sub(r"[^\w\u4e00-\u9fff.-]+", "-", safe_text(value), flags=re.UNICODE).strip("-")
+    return text[:48] or "weekly-brief"
+
+
+def report_history_excerpt(markdown: str, max_chars: int = 180) -> str:
+    text = re.sub(r"[#>*_`|]+", " ", safe_text(markdown))
+    text = re.sub(r"\s+", " ", text).strip()
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars].rstrip() + "..."
+
+
+def report_history_files() -> list[Path]:
+    if not REPORT_HISTORY_DIR.exists():
+        return []
+    return sorted(REPORT_HISTORY_DIR.glob("*.json"), reverse=True)
+
+
+def display_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
+def read_report_history_file(path: Path) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def report_history_item(record: dict[str, Any]) -> dict[str, Any]:
+    payload = record.get("payload") if isinstance(record.get("payload"), dict) else {}
+    return {
+        "id": safe_text(record.get("id")),
+        "createdAt": safe_text(record.get("createdAt")),
+        "title": safe_text(record.get("title") or payload.get("title") or "未命名报告"),
+        "status": safe_text(record.get("status") or report_history_status(payload)),
+        "source": safe_text(record.get("source")),
+        "prompt": safe_text(record.get("prompt")),
+        "model": safe_text(record.get("model")),
+        "summaryExcerpt": safe_text(record.get("summaryExcerpt")),
+        "historyPath": safe_text(record.get("historyPath")),
+    }
+
+
+def save_report_history(payload: dict[str, Any], body: dict[str, Any] | None = None, *, source: str = "") -> dict[str, Any]:
+    REPORT_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+    created_at = datetime.now().isoformat(timespec="seconds")
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+    title = safe_text(payload.get("title")) or title_from_markdown(safe_text(payload.get("reportMarkdown")), "未命名报告")
+    record_id = f"{timestamp}-{report_history_slug(title)}"
+    payload_copy = json.loads(json.dumps(payload, ensure_ascii=False, default=str))
+    payload_copy.setdefault("runMetadata", {})
+    if isinstance(payload_copy["runMetadata"], dict):
+        payload_copy["runMetadata"]["historyId"] = record_id
+        payload_copy["runMetadata"]["historyCreatedAt"] = created_at
+
+    prompt = safe_text((body or {}).get("prompt") or (body or {}).get("user_prompt") or (body or {}).get("intent"))
+    if not prompt and isinstance(payload_copy.get("runMetadata"), dict):
+        prompt = safe_text(payload_copy["runMetadata"].get("userPrompt"))
+
+    run_metadata = payload_copy.get("runMetadata") if isinstance(payload_copy.get("runMetadata"), dict) else {}
+    record = {
+        "id": record_id,
+        "createdAt": created_at,
+        "title": title,
+        "status": report_history_status(payload_copy),
+        "source": source or safe_text(run_metadata.get("source")),
+        "prompt": prompt,
+        "model": safe_text((body or {}).get("model") or configured_model()),
+        "summaryExcerpt": report_history_excerpt(safe_text(payload_copy.get("summaryMarkdown") or payload_copy.get("reportMarkdown"))),
+        "payload": payload_copy,
+    }
+    path = REPORT_HISTORY_DIR / f"{record_id}.json"
+    record["historyPath"] = display_path(path)
+    temp_path = path.with_suffix(".tmp")
+    temp_path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
+    temp_path.replace(path)
+    return report_history_item(record)
+
+
+def report_history_payload(limit: int = 50) -> dict[str, Any]:
+    items: list[dict[str, Any]] = []
+    for path in report_history_files()[:limit]:
+        try:
+            items.append(report_history_item(read_report_history_file(path)))
+        except Exception:
+            continue
+    return {
+        "summary": {
+            "count": len(items),
+            "storage": display_path(REPORT_HISTORY_DIR),
+        },
+        "items": items,
+    }
+
+
+def report_history_detail(record_id: str) -> dict[str, Any]:
+    safe_id = Path(unquote(record_id)).name
+    path = REPORT_HISTORY_DIR / f"{safe_id}.json"
+    if not path.exists():
+        raise FileNotFoundError(f"Report history not found: {safe_id}")
+    return read_report_history_file(path)
+
+
 def mock_payload() -> dict[str, str]:
     report = """# 老板决策页：本地 API 联通测试
 
@@ -1246,6 +1493,7 @@ def chat_completion(
     model: str,
     messages: list[dict[str, str]],
     temperature: float = 0.2,
+    timeout: float | None = None,
 ) -> str:
     if requests is None:
         raise RuntimeError("Python package 'requests' is required")
@@ -1262,13 +1510,21 @@ def chat_completion(
             "messages": messages,
             "temperature": temperature,
         },
-        timeout=float(env("WEEKLY_BRIEF_TIMEOUT", "900")),
+        timeout=timeout if timeout is not None else float(env("WEEKLY_BRIEF_SECTION_TIMEOUT", "120")),
     )
     if response.status_code in {HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN}:
         raise RuntimeError(
             "模型网关鉴权失败：请检查 OPENAI_API_KEY、OPENAI_BASE_URL、OPENAI_MODEL，"
             "或确认当前 key 是否有该模型权限。这不是 Local Auth Token 问题。"
         )
+    if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+        body = response.text[:1000] if hasattr(response, "text") else ""
+        if re.search(r"insufficient_quota|quota|billing", body, re.IGNORECASE):
+            raise RuntimeError(
+                "模型网关额度不足：OpenAI 返回 429 insufficient_quota。"
+                "请检查 API 账户余额、计费计划或更换可用的 OPENAI_API_KEY。"
+            )
+        raise RuntimeError("模型网关限流：OpenAI 返回 429，请稍后重试或更换可用模型/key。")
 
     response.raise_for_status()
 
@@ -1281,6 +1537,19 @@ def chat_completion(
     if not str(content).strip():
         raise RuntimeError("模型网关返回空内容")
     return str(content).strip()
+
+
+def preflight_model_gateway(*, api_key: str, base_url: str, model: str) -> None:
+    if env("WEEKLY_BRIEF_PREFLIGHT", "1").lower() in {"0", "false", "no"}:
+        return
+    chat_completion(
+        api_key=api_key,
+        base_url=base_url,
+        model=model,
+        messages=[{"role": "user", "content": "请只回复 pong，用于确认模型网关可用。"}],
+        temperature=0,
+        timeout=float(env("WEEKLY_BRIEF_PREFLIGHT_TIMEOUT", "20")),
+    )
 
 
 def agent_system_prompt(agent_path: str) -> str:
@@ -1316,6 +1585,7 @@ def build_section_user_prompt(
     )
     if not upstream:
         upstream = "无。"
+    fallback_universe = fallback_universe_markdown(user_prompt)
 
     return f"""
 请运行当前 agent section：{section_name}
@@ -1328,11 +1598,16 @@ def build_section_user_prompt(
 上游输入：
 {upstream}
 
+候选研究脚手架（fallback_seed_universe）：
+{fallback_universe}
+
 执行要求：
 - 只输出当前 section 的 Markdown，不要输出 JSON。
 - 明确写出本 section 是否 complete / partial / failed。
 - 用自然语言写清楚 agent 的公开工作轨迹，不要只输出参数表、状态表或原始 Markdown。
 - 如果缺少真实外部数据源，必须写出缺口和下一步需要补的数据，不能用旧报告或想象数据补齐。
+- 不允许把“上游没有候选、等待 Stock Discovery、暂无输出”作为本 section 的最终输出；如果真实发现不足，必须使用 `fallback_seed_universe` 输出本 agent 自己的验证清单和降级判断。
+- `fallback_seed_universe` 只是研究脚手架，不是买卖建议、实时筛选结果或完整证据结论。
 - 不要复用 `reports/` 目录中的历史结论。
 """.strip()
 
@@ -1364,6 +1639,125 @@ def run_agent_section(
         ],
         temperature=0.2,
     )
+
+
+def failed_section_markdown(section_name: str, exc: Exception) -> str:
+    return "\n\n".join(
+        [
+            f"# {section_name} Section",
+            "",
+            "## Agent 公开思考摘要",
+            (
+                f"我正在运行 {section_name}，但这一段模型调用或数据输入节点失败，"
+                "因此本 section 不能提供完整结论。后续 agent 会继续运行，并把这里标为缺口。"
+            ),
+            "",
+            "## Section 状态",
+            "状态：failed",
+            "",
+            "## 失败原因",
+            f"后端运行失败：{exc}",
+            "",
+            "## 下一步",
+            "后续 section 只能把本段作为缺失输入处理，不能补编新闻、论文、行情、财务数字或候选结论。",
+        ]
+    )
+
+
+def section_output_focus(section_name: str) -> list[str]:
+    if section_name == "Stock Discovery":
+        return [
+            "从 fallback_seed_universe 生成可继续验证的研究入口，避免候选池断流。",
+            "把每个 ticker 标为“待真实数据验证”，不把它们升级为模型发现结论。",
+            "下游 agent 必须围绕这组入口输出验证清单、缺口和降级判断。",
+        ]
+    if section_name == "AI 信息与舆情":
+        return [
+            "逐一列出新闻、论文、开源项目和高信号舆情需要验证的证据类型。",
+            "把尚未接入的真实信息流标为 partial，不用旧报告或想象来源补齐。",
+            "为每个 seed ticker 产出可执行的信息验证问题。",
+        ]
+    if section_name == "Fundamental":
+        return [
+            "围绕收入、利润率、现金流、capex、指引、估值和 SEC filings 建立验证清单。",
+            "把缺少真实财报/consensus 数据标为 partial，不编造财务数字。",
+            "指出哪些财务科目最能证伪或支持本轮研究入口。",
+        ]
+    if section_name == "Technical":
+        return [
+            "围绕价格、成交量、相对强弱、行业 ETF、支撑阻力和波动率建立图表验证清单。",
+            "把缺少实时行情/K 线数据标为 partial，不编造价格点位。",
+            "为每个 seed ticker 给出下一步需要拉取的技术面字段。",
+        ]
+    if section_name == "Reflection":
+        return [
+            "用长期创新弹性和价值纪律直接审查 seed universe。",
+            "把所有结论降级为待证伪假设，不把脚手架 ticker 当作推荐。",
+            "输出 Wood/Buffett 双视角的关键分歧和下一步验证动作。",
+        ]
+    if section_name == "Final Narrative":
+        return [
+            "报告首页仍从老板决策页开始，但结论降级为 partial research plan。",
+            "Top list 只能展示待验证研究入口，不能伪装成完整筛选结果。",
+            "把 Route Plan、数据缺口和 agent 输出审计放到附录。",
+        ]
+    if section_name == "Paper Attribution":
+        return [
+            "为 seed universe 建立 shadow ledger 观察字段，不连接实盘或交易。",
+            "说明本轮无法做真实归因的原因，并列出下次复盘需要的数据。",
+            "把反馈循环限制在研究观察层，不输出账户动作。",
+        ]
+    return [
+        "基于 fallback_seed_universe 输出本 section 的验证清单。",
+        "明确标注数据缺口，不编造事实或来源。",
+        "给下一层 agent 留下可继续处理的结构化输入。",
+    ]
+
+
+def repaired_section_markdown(section_name: str, user_prompt: str, original_status: str = "partial") -> str:
+    status = original_status if original_status in {"complete", "partial", "failed"} else "partial"
+    if status == "complete":
+        status = "partial"
+    tickers = fallback_ticker_list(user_prompt)
+    focus = section_output_focus(section_name)
+    focus_lines = "\n".join(f"- {item}" for item in focus)
+    return "\n\n".join(
+        [
+            f"# {section_name} Section",
+            "",
+            "## Agent 公开思考摘要",
+            (
+                f"本 section 没有把上游真实发现不足当成终点；我改用 `fallback_seed_universe` "
+                f"作为可继续验证的研究脚手架，覆盖 {tickers}。这些 ticker 不是买卖建议，也不是实时筛选结论。"
+            ),
+            "",
+            "## Section 状态",
+            f"状态：{status}",
+            "",
+            "## 可继续验证的 fallback_seed_universe",
+            fallback_universe_markdown(user_prompt),
+            "",
+            "## 本 section 输出",
+            focus_lines,
+            "",
+            "## 当前判断",
+            (
+                "当前判断：真实外部数据节点仍为 partial；本 section 已产出可继续交给下一层的验证对象、"
+                "验证问题和数据缺口，不能把 seed universe 直接升级为投资结论。"
+            ),
+            "",
+            "## 下一步",
+            "下一层 agent 必须基于这组 seed universe 继续输出自己的验证清单、缺口和降级判断。",
+        ]
+    )
+
+
+def ensure_section_actionable_output(section_name: str, markdown: str, user_prompt: str) -> str:
+    if not str(markdown or "").strip():
+        return repaired_section_markdown(section_name, user_prompt, "partial")
+    if is_unhelpful_deferral_text(markdown):
+        return repaired_section_markdown(section_name, user_prompt, infer_section_status(markdown))
+    return markdown
 
 
 def build_final_payload_prompt(user_prompt: str, sections: dict[str, str]) -> str:
@@ -1477,6 +1871,8 @@ def append_run_audit(payload: dict[str, Any], sections: dict[str, str], user_pro
 
 def prompt_label(user_prompt: str, max_chars: int = 42) -> str:
     label = re.sub(r"\s+", " ", str(user_prompt).strip()) or "本次研究"
+    if label == DEFAULT_RESEARCH_INTENT:
+        label = "美股全市场机会扫描"
     if len(label) <= max_chars:
         return label
     return label[:max_chars].rstrip() + "..."
@@ -1512,11 +1908,29 @@ def ensure_boss_decision_page(markdown: str, user_prompt: str) -> str:
 def infer_section_status(markdown: str) -> str:
     text = str(markdown or "")
     lowered = text.lower()
-    if "failed" in lowered or "失败" in text:
-        return "failed/partial"
-    if "partial" in lowered or "缺口" in text or "缺少" in text or "不可用" in text:
+    explicit_status = re.search(
+        r"(?:section\s*状态|section\s*status|本\s*section\s*状态|状态)\s*[:：]\s*`?\s*(complete|generated|partial|failed)\s*`?",
+        lowered,
+        re.IGNORECASE,
+    )
+    if explicit_status:
+        status = explicit_status.group(1).lower()
+        if status == "generated":
+            return "complete"
+        return status
+    if re.search(r"(后端运行失败|运行失败|agent\s+failed|section\s+failed|traceback|exception)", lowered, re.IGNORECASE):
+        return "failed"
+    if (
+        "partial" in lowered
+        or "缺口" in text
+        or "缺少" in text
+        or "不可用" in text
+        or "未接入" in text
+        or "failed" in lowered
+        or "失败" in text
+    ):
         return "partial"
-    return "generated"
+    return "complete"
 
 
 def build_workflow_evidence(user_prompt: str, sections: dict[str, str]) -> str:
@@ -1607,14 +2021,24 @@ def run_agent_workflow(
             context = sections
         else:
             context = sections
-        sections[section_name] = run_agent_section(
-            api_key=api_key,
-            base_url=base_url,
-            model=model,
-            agent_path=agent_path,
+        section_error = ""
+        try:
+            sections[section_name] = run_agent_section(
+                api_key=api_key,
+                base_url=base_url,
+                model=model,
+                agent_path=agent_path,
+                section_name=section_name,
+                user_prompt=user_prompt,
+                context_sections=context,
+            )
+        except Exception as exc:  # noqa: BLE001 - section failures should not hide the rest of the workflow
+            section_error = str(exc)
+            sections[section_name] = failed_section_markdown(section_name, exc)
+        sections[section_name] = ensure_section_actionable_output(
             section_name=section_name,
+            markdown=sections[section_name],
             user_prompt=user_prompt,
-            context_sections=context,
         )
         trace = build_agent_trace(
             section_name=section_name,
@@ -1634,6 +2058,7 @@ def run_agent_workflow(
                 "preview": truncate_text(sections[section_name].replace("\n", " "), 420),
                 "thinkingTrace": trace,
                 "sectionMarkdown": sections[section_name],
+                "sectionError": section_error,
             }
         )
 
@@ -1677,9 +2102,7 @@ def call_upstream(body: dict[str, Any]) -> dict[str, Any]:
 
 
 def call_openai(body: dict[str, Any]) -> dict[str, Any]:
-    user_prompt = body.get("prompt") or body.get("user_prompt") or body.get("intent") or ""
-    if not str(user_prompt).strip():
-        raise ValueError("Request body must include prompt")
+    user_prompt = request_user_prompt(body)
 
     if requests is None:
         raise RuntimeError("Python package 'requests' is required")
@@ -1690,6 +2113,7 @@ def call_openai(body: dict[str, Any]) -> dict[str, Any]:
 
     base_url = configured_base_url().rstrip("/")
     model = body.get("model") or configured_model()
+    preflight_model_gateway(api_key=api_key, base_url=base_url, model=str(model))
 
     if env("WEEKLY_BRIEF_SINGLE_CALL") == "1":
         content = chat_completion(
@@ -1751,6 +2175,17 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/health":
             self.send_json(health_payload())
             return
+        if path == "/api/reports":
+            self.send_json(report_history_payload())
+            return
+        if path.startswith("/api/reports/"):
+            try:
+                self.send_json(report_history_detail(path.rsplit("/", 1)[-1]))
+            except FileNotFoundError as exc:
+                self.send_error_json(HTTPStatus.NOT_FOUND, str(exc))
+            except Exception as exc:  # noqa: BLE001
+                self.send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
+            return
         if path == "/api/pond":
             self.send_json(pond_payload())
             return
@@ -1774,6 +2209,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error_json(HTTPStatus.NOT_FOUND, "Not found")
             return
 
+        body: dict[str, Any] = {}
         try:
             body = self.read_json_body()
             if current_mode() == "openai" and "text/event-stream" in self.headers.get("Accept", ""):
@@ -1785,8 +2221,18 @@ class Handler(BaseHTTPRequestHandler):
                 payload = call_upstream(body)
             else:
                 payload = call_openai(body)
+            history_item = save_report_history(payload, body, source=current_mode())
+            payload.setdefault("runMetadata", {})
+            if isinstance(payload["runMetadata"], dict):
+                payload["runMetadata"]["historyId"] = history_item["id"]
+                payload["runMetadata"]["historyCreatedAt"] = history_item["createdAt"]
             self.send_json(payload)
         except Exception as exc:  # noqa: BLE001 - endpoint returns readable errors
+            if path == "/api/weekly-brief":
+                try:
+                    save_report_history(error_report_payload(str(exc), body), body, source=f"{current_mode()}_error")
+                except Exception:
+                    pass
             self.send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
     def send_openai_event_stream(self, body: dict[str, Any]) -> None:
@@ -1803,38 +2249,51 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.flush()
 
         try:
-            emit({"event": "run_start", "stage": "后端已接收请求", "prompt": body.get("prompt") or body.get("intent")})
-            user_prompt = body.get("prompt") or body.get("user_prompt") or body.get("intent") or ""
-            if not str(user_prompt).strip():
-                raise ValueError("Request body must include prompt")
+            user_prompt = request_user_prompt(body)
+            emit({"event": "run_start", "stage": "后端已接收请求", "prompt": user_prompt})
 
             api_key = configured_api_key()
             if not api_key:
                 raise RuntimeError("OPENAI_API_KEY is missing. Fill .env or set LLM_API_KEY_ENV.")
+            base_url = configured_base_url().rstrip("/")
+            model = str(body.get("model") or configured_model())
+            emit({"event": "gateway_check_start", "stage": "模型网关预检开始"})
+            preflight_model_gateway(api_key=api_key, base_url=base_url, model=model)
+            emit({"event": "gateway_check_done", "stage": "模型网关预检通过"})
 
             payload = run_agent_workflow(
                 api_key=api_key,
-                base_url=configured_base_url().rstrip("/"),
-                model=str(body.get("model") or configured_model()),
+                base_url=base_url,
+                model=model,
                 user_prompt=str(user_prompt),
                 on_event=emit,
             )
+            history_item = save_report_history(payload, body, source="openai_stream")
+            payload.setdefault("runMetadata", {})
+            if isinstance(payload["runMetadata"], dict):
+                payload["runMetadata"]["historyId"] = history_item["id"]
+                payload["runMetadata"]["historyCreatedAt"] = history_item["createdAt"]
             emit({"event": "run_done", "stage": "完成", **payload})
             self.wfile.write(b"data: [DONE]\n\n")
             self.wfile.flush()
         except (BrokenPipeError, ConnectionResetError):
             return
         except Exception as exc:  # noqa: BLE001
-            error_report = f"# 研究未完成\n\n后端运行失败：{exc}"
+            error_payload = error_report_payload(str(exc), body)
+            try:
+                history_item = save_report_history(error_payload, body, source="openai_stream_error")
+                error_payload.setdefault("runMetadata", {})
+                if isinstance(error_payload["runMetadata"], dict):
+                    error_payload["runMetadata"]["historyId"] = history_item["id"]
+                    error_payload["runMetadata"]["historyCreatedAt"] = history_item["createdAt"]
+            except Exception:
+                pass
             try:
                 emit(
                     {
                         "event": "run_error",
                         "stage": "运行失败",
-                        "title": "研究未完成",
-                        "summaryMarkdown": error_report,
-                        "reportMarkdown": error_report,
-                        "evidenceMarkdown": "# 证据包：研究未完成\n\n## Data Node Status\n- Backend：failed",
+                        **error_payload,
                         "error": str(exc),
                     }
                 )

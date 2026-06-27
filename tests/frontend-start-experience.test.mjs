@@ -58,8 +58,48 @@ assert.match(
 );
 assert.match(
   html,
+  /id="progressPercent"[\s\S]*0%/,
+  "running progress should show a visible percentage"
+);
+assert.match(
+  js,
+  /setRunProgress[\s\S]*progressPercent\.textContent\s*=\s*`\$\{Math\.round\(safePercent\)\}%`/,
+  "progress updates should keep the visible percentage in sync with the bar"
+);
+assert.match(
+  js,
+  /aria-valuetext/,
+  "progress updates should expose the percentage to assistive technology"
+);
+assert.match(
+  html,
   /class="workflow-output"[\s\S]*Agent 思考轨迹[\s\S]*id="workflowOutputList"/,
   "running conversation panel should include an agent thinking trace area"
+);
+assert.match(
+  html,
+  /id="reportHistoryNavButton"[\s\S]*历史/,
+  "top navigation should include a report history view"
+);
+assert.match(
+  html,
+  /id="reportHistorySection"[\s\S]*报告历史[\s\S]*id="reportHistoryList"[\s\S]*id="reportHistoryDetailBody"/,
+  "the frontend should include a viewable report history section"
+);
+assert.match(
+  html,
+  /href="\.\/styles\.css\?v=\d{8}-streamdone"/,
+  "stylesheet should be cache-busted so stale UI styles do not survive local reloads"
+);
+assert.match(
+  html,
+  /src="\.\/app\.js\?v=\d{8}-streamdone"/,
+  "app script should be cache-busted so stale initialization code cannot survive local reloads"
+);
+assert.match(
+  html,
+  /class="pond-preview-visual"[\s\S]*assets\/pond-watch\.svg\?v=\d{8}-streamdone/,
+  "pond preview should include a local visual asset instead of being a text-only strip"
 );
 assert.match(
   js,
@@ -83,6 +123,16 @@ assert.match(
 );
 assert.match(
   js,
+  /publicThinkingPreview\(trace\)/,
+  "agent trace cards should summarize only the public 'what I am judging' sentence"
+);
+assert.doesNotMatch(
+  js,
+  /const preview = String\(output\.preview/,
+  "agent trace card summaries should not expose raw event previews before expansion"
+);
+assert.match(
+  js,
   /summary\.setAttribute\("role", "button"\)/,
   "agent trace summaries should expose button semantics"
 );
@@ -95,4 +145,53 @@ assert.doesNotMatch(
   js,
   /if\s*\(\s*!prompt\s*\)\s*\{[\s\S]*?return;/,
   "empty prompt submissions should not be blocked"
+);
+assert.ok(
+  !/state\.activeStep\s*\+\s*1/.test(js),
+  "unknown stream stages should not automatically advance the workflow"
+);
+assert.match(
+  js,
+  /Workflow Error/,
+  "run_error stream events should render as workflow errors instead of anonymous agent cards"
+);
+assert.match(
+  js,
+  /makeReportHistoryUrl\(["']\/api\/reports/,
+  "frontend should call the backend report history API"
+);
+assert.match(
+  js,
+  /completeRun[\s\S]*loadReportHistory\(\{ quiet: true \}\)/,
+  "successful or partial report completion should refresh the report history"
+);
+assert.match(
+  js,
+  /renderReportHistoryDetail/,
+  "frontend should render a selected historical report"
+);
+assert.match(
+  js,
+  /if\s*\(\s*dataLine\s*===\s*"\[DONE\]"\s*\)\s*return\s+true/,
+  "stream readers should treat [DONE] as a terminal event instead of waiting for keep-alive sockets"
+);
+assert.match(
+  js,
+  /reader\.cancel\(\)/,
+  "stream readers should cancel the reader after [DONE] so completeRun can render the result page"
+);
+assert.match(
+  js,
+  /enterRunningState[\s\S]*els\.cancelButton\.hidden\s*=\s*false[\s\S]*els\.cancelButton\.disabled\s*=\s*false/,
+  "the stop button should only be enabled while a workflow is running"
+);
+assert.match(
+  js,
+  /completeRun[\s\S]*els\.cancelButton\.hidden\s*=\s*true[\s\S]*els\.cancelButton\.disabled\s*=\s*true/,
+  "the stop button should be hidden after the result page renders"
+);
+assert.match(
+  js,
+  /showRunError[\s\S]*els\.cancelButton\.hidden\s*=\s*true[\s\S]*els\.cancelButton\.disabled\s*=\s*true/,
+  "the stop button should be hidden after a run error"
 );
