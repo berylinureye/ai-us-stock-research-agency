@@ -4,6 +4,63 @@
 >
 > 这个项目不是一个“AI 自动选股工具”，而是一套由 9 个 agent 组成的 AI 美股投研工作流，专门研究 AI 产业趋势如何传导到美股公司。它会把新闻、论文、GitHub 开源项目、YouTube/播客、社区舆情、财报、SEC 文件和技术面数据，分别交给 Intent Router、Stock Discovery、AI Information & Sentiment、Fundamental、Technical、Reflection、Final Trend Narrative、Paper Portfolio & Attribution、Skill Scout 这 9 个 agent 处理，最后汇总成一份中文投资研究周报。它和普通投研笔记不一样的地方在于，不是追热点喊买卖，而是强制每个结论都有证据链、反证条件和下周复盘；主报告先给一页老板能看懂的 Top 5 决策页，长证据放到独立 evidence 文件里。比较巧的是，它把“AI 叙事”拆成一条可审查的流水线：先控噪筛候选，再验证信息、基本面和技术面，最后用 Cathie Wood vs Buffett 两种视角做反方审查，并用模拟观察账本记录下周结果，反过来校准自己的信号质量。它更像一个会复盘、会自我质疑的 AI 投研团队，而不是一个喊买卖的黑盒。
 
+## 产品架构图：把 AI 投研从“生成答案”变成“可审计流水线”
+
+```mermaid
+flowchart TD
+    U["研究意图 / 前端输入"] --> H["Harness Graph Orchestrator<br/>StateGraph 优先，本地图执行器兜底"]
+
+    H --> P["模型网关预检<br/>API key / model / base URL"]
+    P --> D["Data Node Evidence Bundle<br/>先采集事实，再让 agent 判断"]
+
+    D --> N1["AI 新闻<br/>10 条目标"]
+    D --> N2["论文 / arXiv<br/>5 篇目标"]
+    D --> N3["GitHub 开源项目<br/>5 个目标"]
+    D --> N4["舆情 / 信息强度<br/>5 条目标"]
+    D --> N5["行情 / 技术面<br/>Yahoo / quotes"]
+    D --> N6["基本面 / SEC / 宏观<br/>Finnhub / EDGAR / FRED"]
+
+    D --> R["Intent Router<br/>决定本次跑全链路还是窄任务"]
+    R --> S["Stock Discovery<br/>控噪筛候选，默认最多 8 个"]
+    S --> I["AI Info & Sentiment<br/>验证 AI 叙事是否真实升温"]
+    I --> F["Fundamental<br/>检查收入、利润率、现金流、capex、估值传导"]
+    I --> T["Technical<br/>只看价格、量能、相对强弱和关键位"]
+    F --> X["Reflection<br/>Cathie Wood vs Buffett 双视角反方审查"]
+    T --> X
+    X --> C["Final Narrative<br/>收束成 Version A 老板决策页"]
+    C --> A["Paper Portfolio & Attribution<br/>只做 shadow ledger 复盘，不连实盘"]
+
+    C --> O1["老板决策页<br/>一句话结论 / Top 5 / 最大反证 / 下周只看"]
+    C --> O2["Evidence Pack<br/>主报告 -> evidence 子文件 -> 原始来源"]
+    C --> O3["Agent Visible Trace<br/>每个 agent 的公开判断、数据节点、缺口和下一步"]
+    A --> O4["反馈闭环<br/>下周复盘 thesis 是否成立，校准信号质量"]
+
+    D -.节点失败或数据不足.-> G["质量闸门<br/>partial / No Rating / 不硬凑 Top 5"]
+    G --> C
+
+    classDef input fill:#182232,stroke:#7dd3fc,color:#f8fafc;
+    classDef graph fill:#1e293b,stroke:#a78bfa,color:#f8fafc;
+    classDef data fill:#123524,stroke:#86efac,color:#f8fafc;
+    classDef agent fill:#312e81,stroke:#c4b5fd,color:#f8fafc;
+    classDef output fill:#3b2414,stroke:#fdba74,color:#f8fafc;
+    classDef gate fill:#3f1d2e,stroke:#f9a8d4,color:#f8fafc;
+
+    class U input;
+    class H,P graph;
+    class D,N1,N2,N3,N4,N5,N6 data;
+    class R,S,I,F,T,X,C,A agent;
+    class O1,O2,O3,O4 output;
+    class G gate;
+```
+
+面试时可以这样讲这个项目的巧思：
+
+- **我没有让 LLM 直接写投资结论，而是把投研拆成可控图工作流**：数据节点先采集事实，agent 再按角色分工判断，最后由 Harness 统一组装报告。
+- **每个结论都有降级机制**：如果新闻、论文、GitHub、行情、基本面或舆情节点不足，系统会明确标 `partial / No Rating`，不会为了好看硬凑 Top 5。
+- **报告结构服务决策者，而不是服务模型炫技**：第一页永远是老板决策页，长证据放 evidence pack，既能快速读结论，也能追溯每条证据。
+- **它有复盘闭环**：研究动作进入 shadow ledger，下周用价格和 thesis 归因回看信号质量，让系统不是一次性生成器，而是会自我校准的投研流程。
+- **工程上有稳定交付设计**：LangGraph 可用时走 `StateGraph`，不可用时走本地图执行器；section 超时或数据节点失败不会拖垮整份报告。
+
 ## 这个项目解决什么问题
 
 AI 投资信息源很分散：新闻、发布会、YouTube、播客、GitHub、arXiv、财报、SEC 文件、K 线和社区讨论经常同时影响市场叙事。
