@@ -921,6 +921,7 @@
   }
 
   function normalizeApiPayload(payload, fallbackMarkdown) {
+    let hasExplicitActionPool = false;
     const normalized = {
       raw: payload,
       title: "周报已生成",
@@ -937,6 +938,7 @@
     } else if (payload && typeof payload === "object") {
       normalized.title = firstString(payload, ["title", "report_title", "name"]) || normalized.title;
       normalized.files = collectFiles(payload);
+      hasExplicitActionPool = hasResearchActionPoolField(payload);
       normalized.researchActionPool = collectResearchActionPool(payload);
       normalized.agentTrace = collectAgentTrace(payload);
       normalized.reportMarkdown =
@@ -954,7 +956,7 @@
     if (!normalized.reportMarkdown) normalized.reportMarkdown = "API 已返回，但前端没有找到 Markdown 字段。请检查响应是否包含 markdown、reportMarkdown、files[].content 或 text/plain。";
     if (!normalized.summaryMarkdown) normalized.summaryMarkdown = extractSummaryMarkdown(normalized.reportMarkdown);
     if (!normalized.evidenceMarkdown) normalized.evidenceMarkdown = buildEvidenceMarkdown(normalized.reportMarkdown, normalized.urls);
-    if (!normalized.researchActionPool.length) normalized.researchActionPool = parseResearchActionPoolFromMarkdown(normalized.reportMarkdown);
+    if (!normalized.researchActionPool.length && !hasExplicitActionPool) normalized.researchActionPool = parseResearchActionPoolFromMarkdown(normalized.reportMarkdown);
     return normalized;
   }
 
@@ -1032,7 +1034,17 @@
     if (!payload || typeof payload !== "object") return [];
     const direct = payload.researchActionPool || payload.research_action_pool || payload.top5 || payload.top_5 || payload.candidates;
     if (!Array.isArray(direct)) return [];
-    return direct.map((item, index) => normalizeCandidate(item, index)).filter((item) => item.ticker);
+    return direct.map((item, index) => normalizeCandidate(item, index)).filter((item) => item.ticker && isActionableCandidate(item));
+  }
+
+  function hasResearchActionPoolField(payload) {
+    return ["researchActionPool", "research_action_pool", "top5", "top_5", "candidates"].some((key) => Object.prototype.hasOwnProperty.call(payload, key));
+  }
+
+  function isActionableCandidate(candidate) {
+    const rating = markdownPlainText(candidate && candidate.actionRating || "").toLowerCase();
+    if (!rating) return false;
+    return !/(^|\s)(no\s*rating|defer|watchlist only|avoid-only)(\s|$)/i.test(rating);
   }
 
   function normalizeCandidate(item, index = 0) {
@@ -1067,20 +1079,29 @@
     const lines = String(markdown || "").split(/\r?\n/);
     for (let index = 0; index < lines.length; index += 1) {
       if (!/^#{1,4}\s+.*(Top\s*5\s*Research\s*Action\s*Pool|本周研究动作)/i.test(lines[index].trim())) continue;
-      for (let tableIndex = index + 1; tableIndex < Math.min(index + 24, lines.length); tableIndex += 1) {
-        if (!lines[tableIndex].includes("|") || !isMarkdownSeparator(lines[tableIndex + 1] || "")) continue;
-        const headers = splitMarkdownRow(lines[tableIndex]).map(normalizeTableHeader);
+      let sectionEnd = lines.length;
+      for (let endIndex = index + 1; endIndex < lines.length; endIndex += 1) {
+        if (isMarkdownHeading(lines[endIndex])) {
+          sectionEnd = endIndex;
+          break;
+        }
+      }
+      const sectionLines = lines.slice(index + 1, sectionEnd).filter((line) => line.trim());
+      for (let tableIndex = 0; tableIndex < sectionLines.length - 1; tableIndex += 1) {
+        if (!sectionLines[tableIndex].includes("|") || !isMarkdownSeparator(sectionLines[tableIndex + 1] || "")) continue;
+        const headers = splitMarkdownRow(sectionLines[tableIndex]).map(normalizeTableHeader);
+        if (!isActionPoolHeader(headers)) continue;
         const rows = [];
-        for (let rowIndex = tableIndex + 2; rowIndex < lines.length; rowIndex += 1) {
-          const line = lines[rowIndex];
-          if (!line.includes("|") || line.trim().startsWith("#")) break;
+        for (let rowIndex = tableIndex + 2; rowIndex < sectionLines.length; rowIndex += 1) {
+          const line = sectionLines[rowIndex];
+          if (!line.includes("|") || isMarkdownHeading(line)) break;
           const cells = splitMarkdownRow(line);
           const raw = {};
           headers.forEach((header, cellIndex) => {
             raw[header] = cells[cellIndex] || "";
           });
           const candidate = candidateFromMarkdownRow(raw, rows.length);
-          if (candidate.ticker) rows.push(candidate);
+          if (candidate.ticker && isActionableCandidate(candidate)) rows.push(candidate);
         }
         if (rows.length) return rows.slice(0, 5);
       }
@@ -1143,6 +1164,14 @@
   function isMarkdownSeparator(line) {
     const cells = splitMarkdownRow(line);
     return cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+  }
+
+  function isMarkdownHeading(line) {
+    return /^#{1,6}\s+/.test(String(line || "").trim());
+  }
+
+  function isActionPoolHeader(headers) {
+    return ["rank", "ticker", "actionRating"].every((header) => headers.includes(header));
   }
 
   function completeRun(result) {
@@ -1328,9 +1357,11 @@
   }
 
   function reportStatusFromPayload(payload) {
-    const text = `${payload.title || ""} ${payload.reportMarkdown || ""}`;
-    if (/研究未完成|后端运行失败|failed/i.test(text)) return "failed";
-    if (/partial|缺口|未接入|数据节点不足/i.test(text)) return "partial";
+    const title = String(payload.title || "");
+    const report = String(payload.reportMarkdown || "");
+    const firstScreen = report.slice(0, 1200);
+    if (/研究未完成/i.test(title) || /^#\s*研究未完成/im.test(report) || /后端运行失败/i.test(firstScreen)) return "failed";
+    if (/partial|缺口|未接入|数据节点不足|failed/i.test(report)) return "partial";
     return "complete";
   }
 

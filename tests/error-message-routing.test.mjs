@@ -32,3 +32,14 @@ assert.match(
   /模型网关额度不足/,
   "backend should return a specific message when the OpenAI-compatible gateway has insufficient quota"
 );
+
+assert.match(
+  appJs,
+  /firstScreen = report\.slice\(0, 1200\)/,
+  "frontend report status should only treat top-level early failure text as a failed report"
+);
+assert.doesNotMatch(
+  appJs,
+  /研究未完成\|后端运行失败\|failed\/i\.test\(text\)/,
+  "frontend should not mark an otherwise successful data-node report failed just because an inner node says failed"
+);

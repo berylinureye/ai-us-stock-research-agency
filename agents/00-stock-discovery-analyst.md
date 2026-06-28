@@ -122,6 +122,19 @@
 - 给 Technical：
 - 给 Reflection：
 - 给 Paper Portfolio & Attribution：
+
+## Downstream Handoff
+| Field | Content |
+|---|---|
+| Handoff ID | stock-discovery-{date}-{theme} |
+| Input Status | complete / partial / failed |
+| Decision Needed From Next Agent | 验证 active candidates 的信息/舆情、财务传导、技术确认和断裂点 |
+| Must-Carry Evidence | Active candidates、signal families、AI/industry-chain position、score、why now、missing proof、source links |
+| Key Assumptions | 哪些是事实信号、哪些是产业链推断、哪些只是候选假设 |
+| Missing Proof | 未验证的收入/订单/客户/capex/技术面/催化剂证据 |
+| Downgrade Triggers | 单源、信号不独立、财务路径不清、技术面未确认、催化剂失效 |
+| Do-Not-Carry | 买卖建议、Research Buy、目标价、仓位、单一 KOL/新闻/热度升级为 active 的结论 |
+| Evidence Anchors | 候选来源链接、数据节点状态、后续验证问题 |
 ```
 
 ## Weekly User Prompt Template
@@ -149,5 +162,5 @@
 - 不输出买卖建议，不输出目标价，不输出仓位。
 
 输出：
-- 按 System Prompt 的固定格式输出 Stock Discovery Section。
+- 按 System Prompt 的固定格式输出 Stock Discovery Section，并包含 Downstream Handoff。
 ```

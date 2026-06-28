@@ -5,6 +5,8 @@ Each agent has two layers:
 1. System Prompt: persistent role, rules, boundaries, output format, forbidden behavior.
 2. Weekly User Prompt Template: the concrete task for the current run, including date range, input nodes, filters, and required outputs.
 
+Each executable agent also includes a `Downstream Handoff` block. The handoff contract is defined in [Research Report Output Standard](../docs/research-report-output-standard.md) and records what downstream agents may inherit, what proof is missing, what should trigger a downgrade, and what must not be carried forward.
+
 Files:
 - [08-intent-router.md](08-intent-router.md)
 - [00-stock-discovery-analyst.md](00-stock-discovery-analyst.md)

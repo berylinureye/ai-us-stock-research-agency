@@ -20,6 +20,8 @@ source + parameters + limits + sorting + output schema
 
 Final weekly briefs must pass the [Weekly Brief Quality Gate](weekly-brief-quality-gate.md).
 
+Final report structures and agent handoffs are defined in the [Research Report Output Standard](research-report-output-standard.md). Full weekly briefs use Version A: `老板决策页 + 证据包`.
+
 Every weekly brief, experiment, and single-section research run starts internally with the [Intent Router](../agents/08-intent-router.md), which produces a Route Plan before any research agent runs. The published report must still start with the Boss Decision Page; put the Route Plan in an appendix. Detailed skill behavior is defined in the [Skill Registry](skill-registry.md).
 
 The hard minimum source modules in the AI Information & Sentiment Section are:
@@ -62,6 +64,7 @@ Out of scope: broker trading, account actions, portfolio rebalancing, position s
 Each agent is constrained by:
 - A persistent System Prompt for identity, rules, boundaries, output format, and forbidden behavior.
 - A per-run User Prompt template for the concrete weekly task, input sources, filters, and required result.
+- A `Downstream Handoff` block that tells the next agent what evidence, assumptions, missing proof, downgrade triggers, and forbidden carry-over claims it may inherit.
 
 This is a directed section pipeline, not a roundtable. The Intent Router selects the path first. The final conclusion is produced after stock discovery, information/sentiment, fundamental, technical, and reflection sections are complete. Paper Portfolio & Attribution runs after the final conclusion as a feedback loop.
 

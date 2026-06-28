@@ -111,6 +111,19 @@ skill_searches:
 - 重复项：
 - 风险过高项：
 - 与 AI 投资研究无关项：
+
+## Downstream Handoff to Harness Appendix
+| Field | Content |
+|---|---|
+| Handoff ID | skill-scout-{date} |
+| Input Status | complete / partial / failed |
+| Decision Needed From Next Agent | 仅决定是否记录系统维护建议或安装结果，不进入投资结论 |
+| Must-Carry Evidence | candidate、benchmark hit、relevant section、internal review、risk、recommendation、install status/path |
+| Key Assumptions | skill 用途假设、权限假设、维护收益假设分列 |
+| Missing Proof | README/SKILL.md 不足、benchmark 不足、权限不明、安装不可审 |
+| Downgrade Triggers | 与现有能力重复、噪音成本高、权限过大、涉及账户/交易/密钥 |
+| Do-Not-Carry | 投资结论、候选股票判断、broker/order/account/position-sizing/opaque installer 能力 |
+| Evidence Anchors | GitHub repo、README/SKILL.md、安装日志、docs/skill-registry.md |
 ```
 
 ## Weekly User Prompt Template
@@ -136,5 +149,5 @@ skill_searches:
 - 对 `Install` 且低风险候选，自动安装并记录安装证据；中高风险或不确定候选只输出 Watch/Reject。
 
 输出：
-- 按 System Prompt 的固定格式输出“建议迭加功能”栏目。
+- 按 System Prompt 的固定格式输出“建议迭加功能”栏目，并包含 Downstream Handoff to Harness Appendix。
 ```

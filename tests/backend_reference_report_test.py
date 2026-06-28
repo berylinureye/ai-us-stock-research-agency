@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -65,6 +66,7 @@ class BackendReferenceReportTest(unittest.TestCase):
         self.original_env = os.environ.copy()
         self.original_workflow = server.AGENT_WORKFLOW
         self.original_run_agent_section = server.run_agent_section
+        self.original_collect_research_data_nodes = server.collect_research_data_nodes
         self.original_report_history_dir = server.REPORT_HISTORY_DIR
         RecordingRequests.calls = []
         RecordingRequests.response = OkResponse()
@@ -73,6 +75,7 @@ class BackendReferenceReportTest(unittest.TestCase):
         os.environ["OPENAI_BASE_URL"] = "https://api.viviai.cc/v1"
         os.environ["OPENAI_MODEL"] = "gpt-5.5"
         os.environ["WEEKLY_BRIEF_PREFLIGHT"] = "0"
+        os.environ["WEEKLY_BRIEF_ENABLE_DATA_NODES"] = "0"
         server.AGENT_WORKFLOW = [
             ("intent_router", "Intent Router", "agents/08-intent-router.md"),
             ("final_narrative", "Final Narrative", "agents/01-ai-trend-narrative-analyst.md"),
@@ -82,6 +85,7 @@ class BackendReferenceReportTest(unittest.TestCase):
         server.requests = self.original_requests
         server.AGENT_WORKFLOW = self.original_workflow
         server.run_agent_section = self.original_run_agent_section
+        server.collect_research_data_nodes = self.original_collect_research_data_nodes
         server.REPORT_HISTORY_DIR = self.original_report_history_dir
         os.environ.clear()
         os.environ.update(self.original_env)
@@ -131,6 +135,17 @@ class BackendReferenceReportTest(unittest.TestCase):
         self.assertEqual(payload["runMetadata"]["userPrompt"], server.DEFAULT_RESEARCH_INTENT)
         self.assertEqual(server.prompt_label(server.DEFAULT_RESEARCH_INTENT), "美股全市场机会扫描")
 
+    def test_prompt_builders_include_version_a_output_standard(self):
+        messages = server.build_messages("跑本周周报")
+        full_prompt_text = "\n".join(message["content"] for message in messages)
+        final_agent_prompt = server.agent_system_prompt("agents/01-ai-trend-narrative-analyst.md")
+        stock_discovery_prompt = server.agent_system_prompt("agents/00-stock-discovery-analyst.md")
+
+        for prompt_text in [full_prompt_text, final_agent_prompt, stock_discovery_prompt]:
+            self.assertIn("Research Report Output Standard", prompt_text)
+            self.assertIn("Version A：老板决策页 + 证据包", prompt_text)
+            self.assertIn("Downstream Handoff", prompt_text)
+
     def test_section_status_distinguishes_agent_status_from_data_node_failures(self):
         self.assertEqual(
             server.infer_section_status("## Section 状态\n- 状态：complete\n- 外部数据节点 failed。"),
@@ -167,6 +182,18 @@ class BackendReferenceReportTest(unittest.TestCase):
                 messages=[{"role": "user", "content": "pong"}],
             )
 
+    def test_wall_clock_timeout_interrupts_hung_section(self):
+        started = time.monotonic()
+
+        def slow_section():
+            time.sleep(1)
+            return "too late"
+
+        with self.assertRaisesRegex(TimeoutError, "Hung Section reached wall-clock timeout=0.1s"):
+            server.run_with_wall_clock_timeout("Hung Section", 0.1, slow_section)
+
+        self.assertLess(time.monotonic() - started, 0.8)
+
     def test_agent_section_failure_continues_workflow(self):
         events = []
         server.AGENT_WORKFLOW = [
@@ -197,6 +224,81 @@ class BackendReferenceReportTest(unittest.TestCase):
         self.assertEqual([event["agent"] for event in done_events], ["Intent Router", "AI 信息与舆情", "Final Narrative"])
         failed_trace = next(event["thinkingTrace"] for event in done_events if event["agent"] == "AI 信息与舆情")
         self.assertEqual(failed_trace["status"], "failed")
+
+    def test_graph_workflow_runs_data_nodes_before_local_agent_sections(self):
+        events = []
+        os.environ["WEEKLY_BRIEF_ENABLE_DATA_NODES"] = "1"
+        os.environ["WEEKLY_BRIEF_LOCAL_DATA_SECTIONS"] = "1"
+        server.AGENT_WORKFLOW = [
+            ("intent_router", "Intent Router", "agents/08-intent-router.md"),
+            ("stock_discovery", "Stock Discovery", "agents/00-stock-discovery-analyst.md"),
+            ("information_sentiment", "AI 信息与舆情", "agents/02-ai-information-sentiment-analyst.md"),
+            ("fundamental", "Fundamental", "agents/03-fundamental-analyst.md"),
+            ("technical", "Technical", "agents/04-technical-analyst.md"),
+            ("reflection", "Reflection", "agents/05-reflection-judge.md"),
+            ("final_narrative", "Final Narrative", "agents/01-ai-trend-narrative-analyst.md"),
+            ("paper_attribution", "Paper Attribution", "agents/07-paper-portfolio-attribution-agent.md"),
+        ]
+
+        def fake_items(count, *, ticker="NVDA", source="Test Node"):
+            return [
+                {
+                    "ticker": ticker,
+                    "title": f"{source} item {index}",
+                    "source": source,
+                    "date": "2026-06-29",
+                    "url": f"https://example.com/{source.lower().replace(' ', '-')}/{index}",
+                    "summary": f"{ticker} evidence {index}",
+                }
+                for index in range(1, count + 1)
+            ]
+
+        def fake_bundle(prompt):
+            nodes = {
+                "finnhub_news": server.data_node_result("finnhub_news", "Finnhub company news", "news", fake_items(10, source="Finnhub"), required=10),
+                "arxiv_papers": server.data_node_result("arxiv_papers", "arXiv papers", "papers", fake_items(5, ticker="", source="arXiv"), required=5),
+                "github_projects": server.data_node_result("github_projects", "GitHub project search", "open_source", fake_items(5, ticker="", source="GitHub"), required=5),
+                "finnhub_sentiment": server.data_node_result("finnhub_sentiment", "Finnhub news sentiment", "sentiment", fake_items(5, source="Finnhub Sentiment"), required=5),
+                "market_quotes": server.data_node_result("market_quotes", "Finnhub quotes", "market_data", fake_items(5, source="Finnhub Quote"), required=5),
+                "finnhub_fundamentals": server.data_node_result("finnhub_fundamentals", "Finnhub profile / metrics", "fundamentals", fake_items(3, source="Finnhub Fundamentals"), required=3),
+                "sec_filings": server.data_node_result("sec_filings", "SEC recent filings", "filings", fake_items(3, source="SEC EDGAR"), required=3),
+                "technical_prices": server.data_node_result("technical_prices", "Yahoo daily technicals", "market_data", fake_items(5, source="Yahoo Finance"), required=5),
+                "fred_macro": server.data_node_result("fred_macro", "FRED macro", "macro", fake_items(2, ticker="", source="FRED"), required=2),
+            }
+            bundle = {
+                "enabled": True,
+                "configuredApis": ["FINNHUB_API_KEY", "FRED_API_KEY", "SEC_EDGAR_USER_AGENT"],
+                "tickers": [item["ticker"] for item in server.fallback_research_universe(prompt)],
+                "nodes": nodes,
+            }
+            bundle["markdown"] = server.data_node_bundle_markdown(bundle)
+            return bundle
+
+        server.collect_research_data_nodes = fake_bundle
+
+        def unexpected_model_call(**kwargs):
+            raise AssertionError(f"model section should not run in local data section mode: {kwargs['section_name']}")
+
+        server.run_agent_section = unexpected_model_call
+
+        payload = server.run_agent_workflow(
+            api_key="test-key-good",
+            base_url="https://api.viviai.cc/v1",
+            model="gpt-5.5",
+            user_prompt="跑本周 AI 周报",
+            on_event=events.append,
+        )
+
+        self.assertEqual(events[0]["event"], "data_node_start")
+        self.assertEqual(events[1]["event"], "data_node_done")
+        self.assertIn("StateGraph", payload["runMetadata"]["workflowEngine"])
+        self.assertEqual(payload["runMetadata"]["workflowGraph"][0], "collect_data_nodes")
+        self.assertTrue(payload["runMetadata"]["dataNodesEnabled"])
+        self.assertTrue(payload["runMetadata"]["localDataSections"])
+        self.assertEqual([trace["agent"] for trace in payload["agentTrace"]], [name for _key, name, _path in server.AGENT_WORKFLOW])
+        self.assertTrue(payload["reportMarkdown"].startswith("# 老板决策页"))
+        self.assertIn("Hold-Watch", payload["reportMarkdown"])
+        self.assertIn("Data Node Detail", payload["evidenceMarkdown"])
 
     def test_empty_discovery_output_is_repaired_so_every_agent_has_output(self):
         events = []
@@ -324,6 +426,46 @@ class BackendReferenceReportTest(unittest.TestCase):
             self.assertEqual(record["status"], "failed")
             self.assertIn("后端运行失败：api.viviai.cc read timeout", detail["payload"]["reportMarkdown"])
             self.assertEqual(detail["payload"]["title"], "研究未完成")
+
+    def test_failed_final_narrative_is_repaired_to_version_a_partial_report(self):
+        sections = {
+            "Intent Router": "# Intent Route Plan\n\n## Section 状态\n状态：complete",
+            "Stock Discovery": "# Stock Discovery Section\n\n## Section 状态\n状态：partial",
+            "AI 信息与舆情": "# AI 信息与舆情 Section\n\n## Section 状态\n状态：failed",
+            "Fundamental": "# 基本面验证报告\n\n## Section 状态\n状态：partial",
+            "Technical": "# 技术分析报告\n\n## Section 状态\n状态：partial",
+            "Reflection": "# Reflection Section\n\n## Section 状态\n状态：failed",
+            "Final Narrative": "# Final Narrative Section\n\n## Section 状态\n状态：failed\n\n后端运行失败：read timeout",
+        }
+
+        payload = server.build_workflow_payload_from_sections("跑本周 AI 周报", sections)
+
+        self.assertIn("老板决策页", payload["summaryMarkdown"])
+        self.assertIn("Confidence", payload["summaryMarkdown"])
+        self.assertIn("Est. Upside Range", payload["summaryMarkdown"])
+        self.assertIn("Exit / Trim Rule", payload["summaryMarkdown"])
+        self.assertIn("No Rating", payload["summaryMarkdown"])
+        self.assertIn("数据节点不足", payload["summaryMarkdown"])
+        self.assertNotIn("Final Narrative Section\n\n## Section 状态\n状态：failed", payload["summaryMarkdown"])
+        self.assertIn("Agent Run Audit", payload["reportMarkdown"])
+        self.assertEqual(payload["researchActionPool"], [])
+
+    def test_action_pool_parser_ignores_not_core_pool_table(self):
+        report = server.build_local_version_a_report(
+            "跑本周 AI 周报",
+            {
+                "Intent Router": "## Section 状态\n状态：failed",
+                "Stock Discovery": "## Section 状态\n状态：failed",
+                "AI 信息与舆情": "## Section 状态\n状态：failed",
+                "Fundamental": "## Section 状态\n状态：failed",
+                "Technical": "## Section 状态\n状态：failed",
+                "Reflection": "## Section 状态\n状态：failed",
+                "Final Narrative": "## Section 状态\n状态：failed",
+            },
+        )
+
+        self.assertEqual(server.parse_action_pool_from_markdown(report), [])
+        self.assertNotRegex(report, r"Ticker / Theme \| Research Rating\n\n\|---")
 
 
 if __name__ == "__main__":

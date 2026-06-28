@@ -88,6 +88,19 @@
 ## 交给下游 Agent 的问题
 - 给技术分析师：
 - 给 Reflection Judge：
+
+## Downstream Handoff
+| Field | Content |
+|---|---|
+| Handoff ID | fundamental-{date}-{ticker_or_theme} |
+| Input Status | complete / partial / failed |
+| Decision Needed From Next Agent | 判断财务传导链是否足以支持最终结论，或应被降级 |
+| Must-Carry Evidence | 公司逐项验证、财务传导链、估值/预期差、数据源交叉验证、可证伪指标 |
+| Key Assumptions | 财务事实、基于财务的推断、尚未验证的经营假设分列 |
+| Missing Proof | 缺失财报/分部/订单/RPO/capex/margin/consensus/估值交叉验证 |
+| Downgrade Triggers | 关键指标无法交叉验证、财务科目不承接叙事、估值已充分反映、来源冲突未解决 |
+| Do-Not-Carry | 无依据 EPS/收入 forecast、target price、买卖建议、把新闻/舆情/播客当财务证据 |
+| Evidence Anchors | SEC/IR/earnings/Longbridge/Nasdaq/Yahoo/Finviz 等来源链接或 section anchor |
 ```
 
 ## Weekly User Prompt Template
@@ -109,5 +122,5 @@
 - 不输出买卖建议，不输出自动交易动作。
 
 输出：
-- 按 System Prompt 的固定格式输出基本面验证报告。
+- 按 System Prompt 的固定格式输出基本面验证报告，并包含 Downstream Handoff。
 ```

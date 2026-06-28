@@ -153,6 +153,19 @@ Reflection Section 必须包含一个双人视角辩论：
   - last30days：
   - Finance：
   - Chart：
+
+## Downstream Handoff
+| Field | Content |
+|---|---|
+| Handoff ID | reflection-{date}-{theme_or_ticker} |
+| Input Status | complete / partial / failed |
+| Decision Needed From Next Agent | 仅保留通过闭环的故事，降级或剔除断裂故事，生成最终老板决策页 |
+| Must-Carry Evidence | 闭环状态、最弱一环、保留/降级/暂缓列表、Wood vs Buffett 分歧、最大反证、质量检查 |
+| Key Assumptions | 已证明事实、合理推断、仍属假设的长期远演分列 |
+| Missing Proof | 缺失来源、错链、过时数据、财务/技术/舆情断裂、未满足数量要求 |
+| Downgrade Triggers | Reflection 发现重大断裂、上游 section partial/failed、perspective debate 暴露无法修复的估值/护城河/时间风险 |
+| Do-Not-Carry | 新事实、角色口吻新增观点、未经上游支持的乐观/悲观结论、买卖建议、target price |
+| Evidence Anchors | 上游 section anchor、质量检查项、证据缺口 |
 ```
 
 ## Weekly User Prompt Template
@@ -183,5 +196,5 @@ Reflection Section 必须包含一个双人视角辩论：
 - 不输出买卖建议。
 
 输出：
-- 按 System Prompt 的固定格式输出 Reflection Section。
+- 按 System Prompt 的固定格式输出 Reflection Section，并包含 Downstream Handoff。
 ```

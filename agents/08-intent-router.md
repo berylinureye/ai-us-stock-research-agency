@@ -110,6 +110,19 @@ Router 必须拒绝或改写以下请求：
 - 必须区分的事实/推断/假设：
 - 最终是否需要通过 `docs/weekly-brief-quality-gate.md`：
 
+## Downstream Handoff to Harness
+| Field | Content |
+|---|---|
+| Handoff ID | intent-router-{date}-{task_type} |
+| Input Status | complete / partial / failed |
+| Decision Needed From Next Agent | 按 route plan 加载 prompt、运行 section、处理缺失输入 |
+| Must-Carry Evidence | 用户请求、时间范围、主题/ticker、selected agents、skipped agents、skill/data-node plan、安全边界 |
+| Key Assumptions | 默认时间范围、默认股票池/主题、默认输出语言、默认安全边界 |
+| Missing Proof | 缺失 API、来源链接、ticker、时间范围、用户约束 |
+| Downgrade Triggers | 数据节点缺失、任务意图低置信度、用户要求触及交易/账户边界 |
+| Do-Not-Carry | 任何投资结论、研究 rating、目标价、候选推荐、仓位或下单倾向 |
+| Evidence Anchors | 用户原始请求、AGENCY.md、docs/weekly-brief-quality-gate.md、docs/research-report-output-standard.md |
+
 ## 下一步给 Harness 的指令
 - 请加载的 prompt 文件：
 - 请按此顺序运行：

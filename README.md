@@ -101,6 +101,7 @@ PAPER_TRADING_MODE=shadow_ledger
 - [AGENCY.md](AGENCY.md)
 - [docs/ai-investment-agent-system.md](docs/ai-investment-agent-system.md)
 - [docs/weekly-brief-quality-gate.md](docs/weekly-brief-quality-gate.md)
+- [docs/research-report-output-standard.md](docs/research-report-output-standard.md)
 - [docs/skill-registry.md](docs/skill-registry.md)
 
 然后发起类似任务：
@@ -171,6 +172,7 @@ PAPER_TRADING_MODE=shadow_ledger
 | 高信号舆情 | 5 条，含平台、主题、日期/范围和链接 |
 | Top 5 Pool | 最多 5 个，每个含 rating、置信度、证据、失效条件、预估涨幅区间、观察周期和退出规则 |
 | Evidence Pack | 每个核心候选从主报告链接到同名 evidence 子文件，再链接到原始来源 |
+| Downstream Handoff | 每个执行 agent 说明下游应继承什么、缺什么、何时降级、哪些内容不能带入下一环 |
 
 如果数据源不足，报告必须说明哪个输入节点失败或不足，不能用想象内容补齐数量。
 
@@ -196,6 +198,7 @@ PAPER_TRADING_MODE=shadow_ledger
 - [AGENTS.md](AGENTS.md)：项目级规则。
 - [agents/README.md](agents/README.md)：agent prompt 索引。
 - [docs/ai-investment-agent-system.md](docs/ai-investment-agent-system.md)：系统设计。
+- [docs/research-report-output-standard.md](docs/research-report-output-standard.md)：最终报告三种结构、公开格式约束和 agent handoff 契约。
 - [docs/agent-responsibilities.md](docs/agent-responsibilities.md)：agent 职责、输入、输出和边界。
 - [docs/skill-registry.md](docs/skill-registry.md)：skill/data node 用途、降级和禁止用途。
 - [docs/weekly-brief-quality-gate.md](docs/weekly-brief-quality-gate.md)：最终周报验收标准。

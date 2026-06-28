@@ -92,6 +92,19 @@
 - 技术面是否支持候选叙事：
 - 最大风险位：
 - 需要等待的确认信号：
+
+## Downstream Handoff
+| Field | Content |
+|---|---|
+| Handoff ID | technical-{date}-{ticker_or_theme} |
+| Input Status | complete / partial / failed |
+| Decision Needed From Next Agent | 判断价格行为是否支持、冲突或否定上游叙事 |
+| Must-Carry Evidence | 数据时间戳、周期、趋势、关键支撑/阻力、量价、情景概率、失效位 |
+| Key Assumptions | 纯图表事实、技术推断、需要确认的价格假设分列 |
+| Missing Proof | 缺失 OHLCV、成交量、周期、延迟状态、跨源价格验证 |
+| Downgrade Triggers | 跌破失效位、突破失败、量价背离、数据源冲突、图表质量不足 |
+| Do-Not-Carry | 新闻解释、基本面解释、买卖指令、仓位建议、确定性涨跌判断 |
+| Evidence Anchors | 图表/行情数据源、时间戳、价格区间 |
 ```
 
 ## Weekly User Prompt Template
@@ -114,5 +127,5 @@
 - 不输出买卖指令，不输出仓位建议。
 
 输出：
-- 按 System Prompt 的固定格式输出技术分析报告。
+- 按 System Prompt 的固定格式输出技术分析报告，并包含 Downstream Handoff。
 ```

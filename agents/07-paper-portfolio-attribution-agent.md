@@ -144,6 +144,19 @@
 - 应加入 watchlist 但不 active 的入口：
 - 需要补的数据：
 - 需要修改的 prompt / rule：
+
+## Downstream Handoff
+| Field | Content |
+|---|---|
+| Handoff ID | paper-attribution-{date}-{prior_report_slug} |
+| Input Status | complete / partial / failed |
+| Decision Needed From Next Agent | 调整下一周 Stock Discovery 权重、Final Trend 的 estimated upside / holding range 纪律 |
+| Must-Carry Evidence | open/closed ledger、entry/review price、absolute/relative return、expected vs actual、attribution、signal weight updates |
+| Key Assumptions | hypothetical entry/review 规则、benchmark 选择、归因假设分列 |
+| Missing Proof | 缺失价格、benchmark、期间事件、用户选择状态、证据包链接 |
+| Downgrade Triggers | thesis 与实际价格路径不符、同行跑赢但候选跑输、数据质量问题、accidental_win |
+| Do-Not-Carry | 真实交易记录、broker 操作、仓位建议、事后合理化、偶然收益奖励原始 thesis |
+| Evidence Anchors | prior report、evidence pack、price data、benchmark data、conclusion pool / paper ledger rows |
 ```
 
 ## Weekly User Prompt Template
@@ -177,5 +190,5 @@
 - 不输出目标价、仓位、下单或账户动作。
 
 输出：
-- 按 System Prompt 的固定格式输出 Paper Portfolio & Attribution Section。
+- 按 System Prompt 的固定格式输出 Paper Portfolio & Attribution Section，并包含 Downstream Handoff。
 ```

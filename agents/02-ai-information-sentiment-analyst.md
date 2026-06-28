@@ -159,6 +159,19 @@
 - 给 Technical Analyst：
 - 给 Reflection Judge：
 - 给 Final AI Trend Analyst：
+
+## Downstream Handoff
+| Field | Content |
+|---|---|
+| Handoff ID | ai-info-sentiment-{date}-{theme} |
+| Input Status | complete / partial / failed |
+| Decision Needed From Next Agent | 验证哪些故事能进入财务、技术和闭环审查 |
+| Must-Carry Evidence | 10 news / 5 papers / 5 projects / 5 sentiment items 的计数状态、当前故事、长期远演、反方证据、候选受益链 |
+| Key Assumptions | 分列 Fact / Inference / Hypothesis / Opinion / Market Signal |
+| Missing Proof | 缺失链接、日期、跨平台确认、公司级财务承接、技术面确认 |
+| Downgrade Triggers | 单平台热度、KOL 化、论文未商业化、GitHub 热度无法映射收入、反方证据增强 |
+| Do-Not-Carry | 舆情即事实、论文即商业机会、GitHub stars 即收入、长期远演即当前结论、股票会涨/必涨表述 |
+| Evidence Anchors | 新闻/论文/GitHub/社区/视频原始链接和数据节点状态 |
 ```
 
 ## Weekly User Prompt Template
@@ -191,5 +204,5 @@
 - 不输出买卖建议，不输出目标价。
 
 输出：
-- 按 System Prompt 的固定格式输出 AI 信息与舆情 Section。
+- 按 System Prompt 的固定格式输出 AI 信息与舆情 Section，并包含 Downstream Handoff。
 ```

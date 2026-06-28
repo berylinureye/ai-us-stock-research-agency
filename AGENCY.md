@@ -4,6 +4,12 @@ This file is the master harness specification for the AI investment research wor
 
 Use it when starting a new chat to run the weekly AI investment brief.
 
+Companion output standard:
+
+- Use `docs/research-report-output-standard.md` for canonical final report structures, public-format comparison, hard publishing limits, and downstream handoff contracts.
+- Default full weekly briefs use **Version A: 老板决策页 + 证据包**.
+- Single-name fundamental deep dives may use Version B; quality/moat uncertainty reviews may use Version C.
+
 ## 0.0 Non-Negotiable Output Deal: Boss Decision Page First
 
 This is the most important publishing rule in the agency.
@@ -79,6 +85,18 @@ The first visible section of every weekly brief, experiment, or broad-discovery 
 - Methodology and run boundaries.
 
 These sections are still required for auditability, but they must appear after the boss decision page and core evidence chain.
+
+### External-format hard limits adopted by the agency
+
+The final report standard is adapted from public equity research structures and compliance constraints summarized in `docs/research-report-output-standard.md`. Every final report must avoid:
+
+- Unsupported recommendations, target prices, or certainty language.
+- Any real order, broker, account, position-sizing, fund-allocation, or rebalancing instruction.
+- Treating social heat, KOL views, podcasts, GitHub stars, papers, or chart strength as proof of revenue or investment merit.
+- Mixing facts, inferences, hypotheses, opinions, market signals, and data gaps.
+- Hiding missing data, failed tools, stale dates, broken links, or unverified source claims.
+- Filling Top 5 slots when fewer candidates clear the evidence threshold.
+- Putting long evidence tables or raw source lists on the boss-visible first page.
 
 ### Evidence subfile required format
 
@@ -169,6 +187,7 @@ Agent prompts:
 
 System and quality docs:
 
+- `docs/research-report-output-standard.md`
 - `docs/ai-investment-agent-system.md`
 - `docs/agent-visible-trace.md`
 - `docs/skill-registry.md`
@@ -243,6 +262,26 @@ Default schedule:
 - Next Friday: review actual return vs expected upside range and attribution.
 - If Monday or Friday is a market holiday, use the next available regular-session close.
 
+## 2.2 Downstream Handoff Requirement
+
+Every agent output must include a compact `Downstream Handoff` block following `docs/research-report-output-standard.md`.
+
+Minimum handoff fields:
+
+| Field | Meaning |
+|---|---|
+| Handoff ID | Agent/date/theme or ticker identifier |
+| Input Status | complete / partial / failed |
+| Decision Needed From Next Agent | What the next agent must validate or decide |
+| Must-Carry Evidence | Only evidence strong enough for downstream use |
+| Key Assumptions | Facts, inferences, and hypotheses separated |
+| Missing Proof | Specific missing data that should lower confidence |
+| Downgrade Triggers | What would demote the story or candidate |
+| Do-Not-Carry | Noise, weak evidence, or forbidden claims that downstream agents must not inherit |
+| Evidence Anchors | Links or section anchors used for two-hop evidence tracing |
+
+Handoff blocks are not final conclusions. They exist to prevent evidence leakage, role confusion, and unsupported upgrades between agents.
+
 ## 3. Section Contracts
 
 ### 3.R Intent Router Section
@@ -275,6 +314,7 @@ Required output:
 - Missing inputs and default assumptions.
 - Safety boundary check.
 - Quality gate requirements.
+- Downstream Handoff for the Harness.
 
 Hard boundary:
 
@@ -306,6 +346,7 @@ Required output:
 - Rejected/noise candidates and reason.
 - Signal quality score for every candidate.
 - Routing instructions for downstream agents.
+- Downstream Handoff to AI Information & Sentiment, Fundamental, Technical, and Reflection.
 
 Hard boundary:
 
@@ -358,6 +399,7 @@ Required output:
 - Long-horizon narrative projection: what could happen if the current AI trend compounds over multiple stages.
 - AI value-chain expansion map: upstream, direct beneficiaries, downstream, and second/third-order beneficiaries.
 - Data-node status table: `success / partial / failed`.
+- Downstream Handoff to Fundamental, Technical, Reflection, and Final Trend.
 
 Hard boundary:
 
@@ -403,6 +445,7 @@ Required output:
 - Direct vs indirect beneficiaries.
 - What is already priced vs not verified.
 - Falsification metrics.
+- Downstream Handoff to Reflection and Final Trend.
 
 Hard boundary:
 
@@ -438,6 +481,7 @@ Required output:
 - Volume and moving-average read.
 - Bull/base/bear scenarios.
 - Invalidation points.
+- Downstream Handoff to Reflection, Final Trend, and Paper Attribution.
 
 Hard boundary:
 
@@ -482,6 +526,7 @@ Required output:
 - Cathie Wood vs Buffett perspective debate.
 - Debate summary for the final AI trend conclusion.
 - Quality check status.
+- Downstream Handoff to Final Trend.
 
 Hard boundary:
 
@@ -546,6 +591,7 @@ Required output:
 - Downgraded stories.
 - Investment impact map.
 - Risks, falsification conditions, and next-week checks.
+- Downstream Handoff to Paper Portfolio & Attribution.
 
 Hard boundary:
 
@@ -626,6 +672,7 @@ Required output:
 - Attribution classification.
 - Process improvement recommendations.
 - Signal weight updates for future discovery.
+- Downstream Handoff to next Stock Discovery and Final Trend run.
 
 Hard boundary:
 
@@ -662,6 +709,7 @@ Required output:
 - Risk.
 - Recommendation: `Install / Watch / Reject`.
 - Install status and installed path when auto-installing.
+- Downstream Handoff to Harness Appendix only.
 
 Hard boundary:
 
@@ -1021,14 +1069,16 @@ Never fill a missing slot with invented content.
 
 ## 8. Final Brief Skeleton
 
+Default full weekly briefs must follow Version A in `docs/research-report-output-standard.md`.
+
 ```markdown
 # 老板决策页：{report_title}
 
 ## 1. 一句话结论
 
 ## 2. 本周研究动作
-| Rank | Ticker / Theme | Research Rating | Why Now | Hard Evidence Summary | Evidence Pack | Falsification |
-|---:|---|---|---|---|---|---|
+| Rank | Ticker / Theme | Research Rating | Confidence | Est. Upside Range | Est. Holding Range | Exit / Trim Rule | Why Now | Hard Evidence Summary | Evidence Pack | Falsification |
+|---:|---|---|---:|---|---|---|---|---|---|---|
 
 ## 3. 不进核心池
 | Ticker / Theme | Treatment | Reason |

@@ -4,6 +4,12 @@ This quality gate defines the acceptance criteria for the final weekly AI invest
 
 The brief is not considered complete unless every checklist item below is explicitly checked.
 
+Canonical report structure and handoff standard:
+
+- Use [Research Report Output Standard](research-report-output-standard.md) for the three approved final report versions, public-format constraints, hard publishing limits, and per-agent handoff contracts.
+- Full weekly briefs must use Version A: `老板决策页 + 证据包`.
+- Fundamental deep dives may use Version B; moat/uncertainty reviews may use Version C.
+
 ## Required Modules
 
 The final brief must include all core source modules:
@@ -67,6 +73,15 @@ The final brief must not begin with:
 - Generic methodology.
 
 Those items are required for auditability, but they must appear after the Boss Decision Page and core evidence chain.
+
+The final brief must also avoid the hard limits from `docs/research-report-output-standard.md`:
+
+- No unsupported target price, certainty language, or performance guarantee.
+- No real order, broker, account, position-sizing, allocation, or rebalancing instruction.
+- No social heat, KOL view, podcast, GitHub star count, paper, or chart strength treated as proof of revenue or investment merit.
+- No hidden missing data, failed tool, stale date, broken link, or unverified source claim.
+- No mixing facts, inferences, hypotheses, opinions, market signals, and data gaps.
+- No Top 5 padding when fewer candidates clear the evidence threshold.
 
 ## Two-Hop Evidence Linking Checks
 
@@ -165,6 +180,7 @@ Before publishing the final brief, verify:
 
 The final brief must include:
 
+- Use of one approved report version from `docs/research-report-output-standard.md`, with Version A required for full weekly briefs.
 - Boss Decision Page at the very start of the published report, before any Intent Route Plan, run status, or data-node status.
 - Research action rating and confidence score for core candidates.
 - Top 5 Research Action Pool when one or more candidates clear the threshold.
@@ -191,6 +207,26 @@ The final brief must include:
 - Paper Portfolio & Attribution section when prior observations exist.
 - Conclusion Pool section or status when Top 5 candidates exist.
 - Suggested add-on features from Skill Scout when available.
+
+## Downstream Handoff Checks
+
+Every executed agent must include a `Downstream Handoff` block unless the route is explicitly final-only and no downstream consumer exists.
+
+Required fields:
+
+| Field | Required Check |
+|---|---|
+| Handoff ID | Identifies agent/date/theme or ticker |
+| Input Status | complete / partial / failed |
+| Decision Needed From Next Agent | The next validation or decision is explicit |
+| Must-Carry Evidence | Only evidence strong enough for downstream use |
+| Key Assumptions | Fact / inference / hypothesis separated |
+| Missing Proof | Specific gaps are listed |
+| Downgrade Triggers | Conditions that demote the story or candidate |
+| Do-Not-Carry | Noise, weak evidence, and forbidden claims are excluded |
+| Evidence Anchors | Links, section anchors, or evidence subfile anchors are present |
+
+If a section lacks a handoff block, the Harness must mark the run partial or add a short generated handoff before passing the section downstream.
 
 ## Language Style
 
@@ -251,6 +287,8 @@ If a node fails, do not silently continue as if data exists. Mark the affected c
   - 是否为每个 Top 5 / 核心候选提供 Evidence Pack 链接：有 / 无
   - 是否存在同名证据子文件 `{report_slug}.evidence.md`：有 / 无
   - 长证据表是否没有塞进老板决策页：有 / 无
+  - 是否使用 `docs/research-report-output-standard.md` 中批准的报告版本：有 / 无
+  - 完整周报是否使用 Version A 老板决策页 + 证据包：有 / 无 / 不适用
   - 高置信度判断是否有 2-3 条硬证据：有 / 无
   - 是否包含 action rating 和 confidence：有 / 无
   - Top 5 池是否不超过 5 个：有 / 无 / 不适用
@@ -298,4 +336,8 @@ If a node fails, do not silently continue as if data exists. Mark the affected c
   - Cross-check data：
   - Paper ledger：
   - Perspective skills：
+- Downstream Handoff：通过 / 部分通过 / 未通过
+  - 每个执行 agent 是否有 handoff block：
+  - 是否列出 Do-Not-Carry：
+  - 是否列出 Missing Proof 和 Downgrade Triggers：
 ```

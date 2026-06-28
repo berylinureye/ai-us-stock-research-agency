@@ -4,6 +4,8 @@
 
 这份文档解释每个 agent 负责什么、读取什么、输出什么、不能做什么，以及它在整条链路中的位置。每个 agent 都有两个链接：一个指向可执行 prompt，一个指向本说明段落。
 
+最终报告结构、公开格式约束和下游交接契约见：[research-report-output-standard.md](research-report-output-standard.md)。
+
 ## 总览流程
 
 ```mermaid
@@ -56,6 +58,7 @@ Prompt：[agents/08-intent-router.md](../agents/08-intent-router.md)
 - Missing inputs and defaults。
 - Safety boundary check。
 - Quality gate requirements。
+- Downstream Handoff to Harness。
 
 边界：
 
@@ -91,6 +94,7 @@ Prompt：[agents/00-stock-discovery-analyst.md](../agents/00-stock-discovery-ana
 - Rejected / Deferred Noise。
 - Signal Quality Score。
 - Downstream Routing。
+- Downstream Handoff。
 
 边界：
 
@@ -125,6 +129,7 @@ Prompt：[agents/02-ai-information-sentiment-analyst.md](../agents/02-ai-informa
 - 当前观察版趋势故事。
 - 长期远演版趋势故事。
 - AI 产业链外推图。
+- Downstream Handoff。
 
 边界：
 
@@ -156,6 +161,7 @@ Prompt：[agents/03-fundamental-analyst.md](../agents/03-fundamental-analyst.md)
 - 叙事 -> 财务科目 -> 估值/预期差。
 - 数据源交叉验证。
 - 可证伪指标。
+- Downstream Handoff。
 
 边界：
 
@@ -186,6 +192,7 @@ Prompt：[agents/04-technical-analyst.md](../agents/04-technical-analyst.md)
 - 量价与均线。
 - Bull/base/bear scenario。
 - 给 Reflection 的技术结论。
+- Downstream Handoff。
 
 边界：
 
@@ -221,6 +228,7 @@ Prompt：[agents/05-reflection-judge.md](../agents/05-reflection-judge.md)
 - 产业链外推审查。
 - Perspective Debate。
 - 交给最终趋势分析师的处理建议。
+- Downstream Handoff。
 
 边界：
 
@@ -311,6 +319,7 @@ Prompt：[agents/07-paper-portfolio-attribution-agent.md](../agents/07-paper-por
 - Sell / Hold Review。
 - Attribution。
 - Signal Weight Updates。
+- Downstream Handoff。
 
 边界：
 
@@ -345,6 +354,7 @@ Prompt：[agents/06-skill-scout.md](../agents/06-skill-scout.md)
 - 建议拒绝。
 - benchmark、内部审查、风险说明。
 - 对自动安装项记录 installed / failed 状态、安装路径和安装证据。
+- Downstream Handoff to Harness Appendix。
 
 边界：
 
