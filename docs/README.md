@@ -8,7 +8,7 @@
 
 | 文档 | 什么时候看 |
 |---|---|
-| [../README.md](../README.md) | 第一次了解项目、面试讲述、快速启动 |
+| [../README.md](../README.md) | 第一次了解项目、产品亮点、快速启动 |
 | [../AGENCY.md](../AGENCY.md) | 真正运行周报前，作为 Harness Agent runbook |
 | [../AGENTS.md](../AGENTS.md) | 查看项目规则、安全边界和报告硬约束 |
 | [agent-responsibilities.md](agent-responsibilities.md) | 理解每个 agent 的职责、输入、输出和禁止行为 |

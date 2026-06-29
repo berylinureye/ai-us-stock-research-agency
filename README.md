@@ -11,15 +11,14 @@
 - **决策者优先**：最终报告从「老板决策页」开始，先给结论、Top 5、最大反证和下周验证点。
 - **证据可追溯**：主报告只放摘要，详细证据进入同名 evidence 文件，形成「主报告 -> 证据包 -> 原始来源」双跳链接。
 - **多 Agent 分工清晰**：Intent Router、Stock Discovery、AI 信息舆情、Fundamental、Technical、Reflection、Final Narrative、Paper Attribution 各自有输入、输出和禁止行为。
+- **智能路由编排**：LangGraph / StateGraph Harness 先生成 Route Plan；用户已给股票时跳过发现环节，宽泛主题才进入 Stock Discovery。
 - **可降级而不硬凑**：数据节点失败或证据不足时，明确标记 `partial` / `No Rating`，不编造新闻、财务数字或链接。
 - **有复盘闭环**：Research Action Pool 可进入 Conclusion Pond / Paper Portfolio，下周做 thesis attribution，校准信号质量。
 - **面向产品化演进**：前端展示报告、证据包、Agent Trace 和关注池塘；后端下一步重构为 FastAPI 模块化单体。
 
-## 适合怎么讲
+## 项目定位
 
-面试 AI 产品经理时可以这样讲：
-
-> 我做的不是“AI 自动选股”，而是一个研究工作流产品。它把高风险金融判断拆成数据采集、候选控噪、分层验证、反方审查、证据追溯和模拟复盘。重点体现的是我如何给 AI 产品定义场景、边界、质量门槛和迭代闭环。
+这个项目聚焦研究流程本身：把高风险金融判断拆成数据采集、候选控噪、分层验证、反方审查、证据追溯和模拟复盘。系统关注的是研究质量、证据完整性和后续归因，而不是交易执行。
 
 ## 核心流程
 
@@ -27,26 +26,39 @@
 flowchart TD
     U["用户研究意图"] --> FE["Frontend Research Workbench<br/>报告 / 证据 / Agent Trace / 池塘"]
     FE --> API["Backend API<br/>/api/weekly-brief"]
-    API --> PRE["模型网关与环境预检"]
-    API --> DATA["Data Node Evidence Bundle<br/>新闻 / 论文 / GitHub / 行情 / 财报 / SEC"]
+    API --> LG["LangGraph / StateGraph Harness<br/>统一状态、节点编排、SSE Trace"]
+    LG --> PRE["模型网关与环境预检"]
+    PRE --> R["Intent Router<br/>生成 Route Plan"]
 
-    DATA --> R["Intent Router<br/>决定完整周报或单点任务"]
-    R --> S["Stock Discovery<br/>控噪筛候选，默认最多 8 个"]
-    S --> I["AI Information & Sentiment<br/>验证叙事是否升温"]
-    I --> F["Fundamental<br/>验证财务传导"]
-    I --> T["Technical<br/>验证价格行为"]
+    R --> Q{"研究意图类型"}
+    Q -- "宽泛主题 / 全市场扫描<br/>未给定股票" --> S["Stock Discovery<br/>发现 raw candidates<br/>active 默认最多 8 个"]
+    Q -- "用户已给股票 / 股票池" --> CAND["Candidate Scope<br/>沿用用户给定 ticker<br/>跳过发现环节"]
+    Q -- "单模块任务" --> ONE{"单模块路线"}
+
+    S --> BUNDLE["Data Node Evidence Bundle<br/>新闻 / 论文 / GitHub / 行情 / 财报 / SEC"]
+    CAND --> BUNDLE
+
+    ONE -- "只看基本面" --> F["Fundamental<br/>验证财务传导"]
+    ONE -- "只看技术面" --> T["Technical<br/>验证价格行为"]
+    ONE -- "只做复盘归因" --> P["Paper Portfolio & Attribution<br/>shadow ledger 复盘"]
+    ONE -- "只做文档 / 配置 / 维护" --> M["Maintenance Output<br/>不运行投资研究链路"]
+
+    BUNDLE --> I["AI Information & Sentiment<br/>验证叙事是否升温"]
+    I --> F
+    I --> T
     F --> X["Reflection<br/>Cathie Wood vs Buffett 反方审查"]
     T --> X
-    X --> C["Final Narrative<br/>老板决策页 + Top 5"]
-    C --> P["Paper Portfolio & Attribution<br/>shadow ledger 复盘"]
+    X --> FN["Final Narrative<br/>老板决策页 + Top 5"]
+    FN --> P
 
-    C --> O1["Boss Decision Page"]
-    C --> O2["Evidence Pack"]
-    C --> O3["Agent Visible Trace"]
+    FN --> O1["Boss Decision Page"]
+    FN --> O2["Evidence Pack"]
+    LG --> O3["Agent Visible Trace<br/>公开状态 / 证据缺口 / 下一步"]
     P --> O4["Next Week Attribution"]
+    M --> O5["Docs / Config / Skill Scout Appendix"]
 
-    DATA -.数据不足.-> G["Quality Gate<br/>partial / No Rating"]
-    G --> C
+    BUNDLE -.数据不足.-> G["Quality Gate<br/>partial / No Rating"]
+    G --> FN
 ```
 
 ## 最终产出
