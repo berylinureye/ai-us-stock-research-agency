@@ -28,20 +28,21 @@ flowchart TD
     FE --> API["Backend API<br/>/api/weekly-brief"]
     API --> LG["LangGraph / StateGraph Harness<br/>统一状态、节点编排、SSE Trace"]
     LG --> PRE["模型网关与环境预检"]
-    PRE --> R["Intent Router<br/>生成 Route Plan"]
+    PRE --> R["Intent Router<br/>生成 Route Plan<br/>task_type / ticker_scope / sections_to_run"]
 
     R --> Q{"研究意图类型"}
-    Q -- "宽泛主题 / 全市场扫描<br/>未给定股票" --> S["Stock Discovery<br/>发现 raw candidates<br/>active 默认最多 8 个"]
-    Q -- "用户已给股票 / 股票池" --> CAND["Candidate Scope<br/>沿用用户给定 ticker<br/>跳过发现环节"]
+    Q -- "宽泛主题 / 全市场扫描<br/>未给定股票" --> WIDE["发现数据包<br/>新闻 / 论文 / GitHub / ETF与行业异动<br/>财报与capex / 行情与技术强度"]
+    WIDE --> S["Stock Discovery<br/>从 raw candidates 中控噪<br/>输出 active <= 8 / watch / reject"]
+    Q -- "用户已给股票 / 股票池" --> CAND["Candidate Scope<br/>以用户给定 ticker 为研究范围<br/>跳过股票发现"]
     Q -- "单模块任务" --> ONE{"单模块路线"}
 
-    S --> BUNDLE["Data Node Evidence Bundle<br/>新闻 / 论文 / GitHub / 行情 / 财报 / SEC"]
-    CAND --> BUNDLE
+    S --> CAND
+    CAND --> BUNDLE["验证数据包<br/>按候选股票收集信息流 / 基本面 / 技术面证据"]
 
     ONE -- "只看基本面" --> F["Fundamental<br/>验证财务传导"]
     ONE -- "只看技术面" --> T["Technical<br/>验证价格行为"]
-    ONE -- "只做复盘归因" --> P["Paper Portfolio & Attribution<br/>shadow ledger 复盘"]
-    ONE -- "只做文档 / 配置 / 维护" --> M["Maintenance Output<br/>不运行投资研究链路"]
+    ONE -- "复盘已选观察项" --> P["Paper Portfolio & Attribution<br/>对 Conclusion Pond / shadow ledger 做归因"]
+    ONE -- "文档 / 配置 / Skill Scout" --> M["Maintenance Output<br/>不运行投资研究链路"]
 
     BUNDLE --> I["AI Information & Sentiment<br/>验证叙事是否升温"]
     I --> F
@@ -60,6 +61,21 @@ flowchart TD
     BUNDLE -.数据不足.-> G["Quality Gate<br/>partial / No Rating"]
     G --> FN
 ```
+
+### 流程图说明
+
+这张图的重点不是每次都跑同一条流水线，而是先由 `Intent Router` 判断用户到底要什么，再由 LangGraph / StateGraph Harness 按 Route Plan 编排节点。
+
+| 节点 | 含义 |
+|---|---|
+| `Intent Router` | 先读用户输入，判断任务类型、股票范围、要运行哪些 section、哪些 section 可以跳过，以及质量门槛。 |
+| 宽泛主题 / 全市场扫描 | 用户只给主题或问题，例如 AI inference、数据中心、电力、半导体供应链，没有明确 ticker。系统需要先做 Stock Discovery。 |
+| 发现数据包 | Stock Discovery 用来找候选的广域输入，包括新闻、论文、GitHub 项目、ETF/行业异动、财报与 capex 线索、行情和技术强度。 |
+| `Stock Discovery` | 不是直接做最终结论，而是从 raw candidates 里控噪，输出 active candidates、watchlist 和 reject；active 默认最多 8 个。 |
+| 用户已给股票 / 股票池 | 用户已经指定 NVDA、AMD、AVGO 这类 ticker 时，系统不再重新发现股票，而是把这些 ticker 作为 `Candidate Scope` 直接进入验证。 |
+| `Candidate Scope` | 当前研究范围。它可能来自用户给定股票，也可能来自 Stock Discovery 输出的 active candidates。 |
+| 验证数据包 | 围绕 Candidate Scope 收集证据，供信息舆情、基本面、技术面、反思和最终结论使用。 |
+| 单模块任务 | 用户只要求某一块输出时，不跑完整周报。例如“只看 NVDA 基本面”只跑 Fundamental；“只看 AMD 技术面”只跑 Technical；“复盘上周观察池”只跑 Paper Attribution；“整理配置/文档/工具建议”走 Maintenance。 |
 
 ## 最终产出
 
