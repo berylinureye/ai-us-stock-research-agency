@@ -32,6 +32,54 @@ The hard minimum source modules in the AI Information & Sentiment Section are:
 
 If any module cannot meet the minimum count, the report must explain which input node failed or returned insufficient data. Missing data must not be replaced with invented items.
 
+## Application Architecture Target
+
+The research workflow is delivered as a local web workbench plus a backend API. The current backend refactor target is a FastAPI modular monolith: keep `python3 backend/server.py --host ... --port ...` compatible, but move route handling and business logic into `backend/app/`.
+
+Detailed backend plan: [Backend FastAPI Refactor Plan](backend-fastapi-refactor-plan.md).
+
+```mermaid
+flowchart TD
+    UI["Frontend Research Workbench"] --> API["FastAPI App<br/>Front Controller"]
+    API --> ROUTERS["Routers<br/>health / weekly_brief / pond / reports"]
+    ROUTERS --> SERVICE["WeeklyBriefService<br/>Facade"]
+
+    SERVICE --> PREFLIGHT["Model Gateway Preflight"]
+    SERVICE --> WORKFLOW["Workflow Service<br/>StateGraph or local runner"]
+    SERVICE --> EMITTER["SSE Event Emitter<br/>Observer"]
+    SERVICE --> HISTORY["Report History Repository"]
+    SERVICE --> POND["Pond Repository"]
+
+    WORKFLOW --> CLIENTS["Data Clients / Adapters<br/>OpenAI / Finnhub / Yahoo / GitHub / arXiv / SEC / FRED"]
+    WORKFLOW --> AGENTS["Directed Agent Pipeline"]
+
+    AGENTS --> FINAL["Boss Decision Page<br/>Evidence Pack<br/>Agent Trace"]
+    FINAL --> HISTORY
+    FINAL --> POND
+    EMITTER --> UI
+    HISTORY --> UI
+    POND --> UI
+```
+
+Design pattern mapping:
+
+| Pattern | System role | Why it matters |
+|---|---|---|
+| Front Controller | FastAPI app + routers | One HTTP entry layer instead of a large handler class |
+| Facade | `WeeklyBriefService` | Keeps route handlers thin and hides workflow/data/history complexity |
+| Strategy / Adapter | data clients | Lets data sources be replaced without rewriting the workflow |
+| DAO / Repository | report history and pond repositories | Separates storage from research logic |
+| Observer | SSE event emitter | Streams structured agent events without polluting final report payloads |
+
+Compatibility constraints:
+
+- `GET /api/health` remains the health check.
+- `POST /api/weekly-brief` keeps JSON and `text/event-stream` support.
+- `GET /api/pond`, `POST /api/pond/select`, and `POST /api/pond/refresh` remain the pond API.
+- `GET /api/reports` and `GET /api/reports/{id}` remain the report-history API.
+- Response fields remain compatible: `title`, `summaryMarkdown`, `reportMarkdown`, `evidenceMarkdown`, `researchActionPool`, `agentTrace`, and `runMetadata.historyId`.
+- `WEEKLY_BRIEF_MOCK`, `WEEKLY_BRIEF_UPSTREAM_URL`, and default OpenAI-compatible modes remain supported.
+
 ## Agent Roles
 
 Detailed prompts live in:

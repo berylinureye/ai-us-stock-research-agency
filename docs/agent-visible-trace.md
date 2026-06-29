@@ -10,6 +10,27 @@ Agent Visible Trace 是给用户看的公开工作轨迹，不是隐藏 chain-of
 - 只展示公开、可审计的 reasoning summary。
 - 不输出隐藏推理链、内部草稿、未经证实的事实或工具密钥。
 - 原始 section Markdown 可以保留，但必须折叠在“查看原始 section 输出”里。
+- 后端 FastAPI 重构后，Agent Visible Trace 通过统一 SSE event emitter 输出；它是 Observer 事件流，不是最终 `reportMarkdown` / `evidenceMarkdown` payload 的混杂内容。
+
+## 后端事件流边界
+
+目标后端结构见：[backend-fastapi-refactor-plan.md](backend-fastapi-refactor-plan.md)。
+
+```mermaid
+flowchart LR
+    W["Workflow Service"] --> E["SSE Event Emitter"]
+    W --> P["Final Payload Assembler"]
+    E --> T["Agent Visible Trace<br/>stage / status / public summary"]
+    P --> R["Report Payload<br/>summaryMarkdown / reportMarkdown / evidenceMarkdown"]
+    T --> UI["Frontend Trace Cards"]
+    R --> UI
+```
+
+约束：
+
+- SSE event 可以频繁更新，但只能包含公开摘要、状态、数据节点、证据缺口和下一步。
+- 最终 payload 仍然由报告组装器生成，不能把 raw stream log 当作正式报告。
+- 如果某个节点失败，trace 显示失败原因和降级状态；最终报告用 `partial` / `No Rating` 反映影响。
 
 ## Schema
 

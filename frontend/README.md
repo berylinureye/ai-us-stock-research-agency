@@ -24,6 +24,8 @@ http://localhost:5173
 python3 backend/server.py --port 8787
 ```
 
+后端目标重构为 FastAPI 模块化单体，但前端调用契约保持不变：`backend/server.py` 仍作为兼容启动器，`/api/weekly-brief`、`/api/pond`、`/api/reports` 等 endpoint 不改。详细计划见 [../docs/backend-fastapi-refactor-plan.md](../docs/backend-fastapi-refactor-plan.md)。
+
 请求体会包含：
 
 ```json

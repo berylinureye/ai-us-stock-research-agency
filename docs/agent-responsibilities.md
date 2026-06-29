@@ -5,13 +5,21 @@
 这份文档解释每个 agent 负责什么、读取什么、输出什么、不能做什么，以及它在整条链路中的位置。每个 agent 都有两个链接：一个指向可执行 prompt，一个指向本说明段落。
 
 最终报告结构、公开格式约束和下游交接契约见：[research-report-output-standard.md](research-report-output-standard.md)。
+后端模块化目标见：[backend-fastapi-refactor-plan.md](backend-fastapi-refactor-plan.md)。
 
 ## 总览流程
 
 ```mermaid
-flowchart LR
-    U["User Request"] --> R["0. Intent Router"]
-    R --> A["Selected Data Inputs"]
+flowchart TD
+    U["User Request"] --> FE["Frontend Research Workbench"]
+    FE --> API["FastAPI API Layer<br/>weekly_brief router"]
+    API --> SVC["WeeklyBriefService<br/>Facade"]
+    SVC --> PRE["Gateway / Env Preflight"]
+    SVC --> DATA["Selected Data Inputs<br/>clients / adapters"]
+    SVC --> TRACE["SSE Event Emitter<br/>Agent Visible Trace"]
+
+    DATA --> R["0. Intent Router"]
+    R --> A["Route Plan<br/>selected agents / skipped agents"]
     R --> X["Single-Section Route"]
     A --> B["Stock Discovery"]
     X --> C["AI Info & Sentiment"]
@@ -27,8 +35,16 @@ flowchart LR
     F --> G["5. Final Trend Narrative"]
     G --> H["6. Paper Portfolio & Attribution"]
     H --> I["Next Week Signal Weight Updates"]
+    G --> OUT["Boss Page + Evidence Pack"]
+    OUT --> HIST["Reports Repository"]
+    H --> POND["Pond Repository"]
+    TRACE --> FE
+    HIST --> FE
+    POND --> FE
     J["7. Skill Scout"] -. "system upgrades" .-> B
 ```
+
+注意：FastAPI / repository / event emitter 是应用交付层；下面的 agent prompt 仍然只负责研究职责，不直接处理 HTTP、文件存储或前端渲染。
 
 ## 0. Intent Router / Harness Router
 

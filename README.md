@@ -8,19 +8,25 @@
 
 ```mermaid
 flowchart TD
-    U["研究意图 / 前端输入"] --> H["Harness Graph Orchestrator<br/>StateGraph 优先，本地图执行器兜底"]
+    U["研究意图 / 前端输入"] --> FE["研究台 Frontend<br/>报告 / 证据 / Agent Trace / 池塘"]
+    FE --> FC["FastAPI Front Controller<br/>目标：server.py 只做兼容启动器"]
 
-    H --> P["模型网关预检<br/>API key / model / base URL"]
-    P --> D["Data Node Evidence Bundle<br/>先采集事实，再让 agent 判断"]
+    FC --> RT["Routers<br/>health / weekly_brief / pond / reports"]
+    RT --> WS["WeeklyBriefService Facade<br/>隐藏编排、数据节点、历史持久化"]
 
-    D --> N1["AI 新闻<br/>10 条目标"]
-    D --> N2["论文 / arXiv<br/>5 篇目标"]
-    D --> N3["GitHub 开源项目<br/>5 个目标"]
-    D --> N4["舆情 / 信息强度<br/>5 条目标"]
-    D --> N5["行情 / 技术面<br/>Yahoo / quotes"]
-    D --> N6["基本面 / SEC / 宏观<br/>Finnhub / EDGAR / FRED"]
+    WS --> GW["模型网关预检<br/>API key / model / base URL"]
+    WS --> EM["SSE Event Emitter<br/>Observer 结构化事件流"]
+    WS --> DB["Data Node Evidence Bundle<br/>先采集事实，再让 agent 判断"]
+    WS --> RP["Repositories<br/>report history / conclusion pond"]
 
-    D --> R["Intent Router<br/>决定本次跑全链路还是窄任务"]
+    DB --> N1["AI 新闻<br/>10 条目标"]
+    DB --> N2["论文 / arXiv<br/>5 篇目标"]
+    DB --> N3["GitHub 开源项目<br/>5 个目标"]
+    DB --> N4["舆情 / 信息强度<br/>5 条目标"]
+    DB --> N5["行情 / 技术面<br/>Yahoo / quotes"]
+    DB --> N6["基本面 / SEC / 宏观<br/>Finnhub / EDGAR / FRED"]
+
+    DB --> R["Intent Router<br/>决定本次跑全链路还是窄任务"]
     R --> S["Stock Discovery<br/>控噪筛候选，默认最多 8 个"]
     S --> I["AI Info & Sentiment<br/>验证 AI 叙事是否真实升温"]
     I --> F["Fundamental<br/>检查收入、利润率、现金流、capex、估值传导"]
@@ -32,22 +38,22 @@ flowchart TD
 
     C --> O1["老板决策页<br/>一句话结论 / Top 5 / 最大反证 / 下周只看"]
     C --> O2["Evidence Pack<br/>主报告 -> evidence 子文件 -> 原始来源"]
-    C --> O3["Agent Visible Trace<br/>每个 agent 的公开判断、数据节点、缺口和下一步"]
+    C --> O3["Agent Visible Trace<br/>公开判断、数据节点、缺口和下一步"]
     A --> O4["反馈闭环<br/>下周复盘 thesis 是否成立，校准信号质量"]
 
-    D -.节点失败或数据不足.-> G["质量闸门<br/>partial / No Rating / 不硬凑 Top 5"]
+    DB -.节点失败或数据不足.-> G["质量闸门<br/>partial / No Rating / 不硬凑 Top 5"]
     G --> C
 
     classDef input fill:#182232,stroke:#7dd3fc,color:#f8fafc;
-    classDef graph fill:#1e293b,stroke:#a78bfa,color:#f8fafc;
+    classDef app fill:#1e293b,stroke:#a78bfa,color:#f8fafc;
     classDef data fill:#123524,stroke:#86efac,color:#f8fafc;
     classDef agent fill:#312e81,stroke:#c4b5fd,color:#f8fafc;
     classDef output fill:#3b2414,stroke:#fdba74,color:#f8fafc;
     classDef gate fill:#3f1d2e,stroke:#f9a8d4,color:#f8fafc;
 
     class U input;
-    class H,P graph;
-    class D,N1,N2,N3,N4,N5,N6 data;
+    class FE,FC,RT,WS,GW,EM,RP app;
+    class DB,N1,N2,N3,N4,N5,N6 data;
     class R,S,I,F,T,X,C,A agent;
     class O1,O2,O3,O4 output;
     class G gate;
@@ -59,7 +65,7 @@ flowchart TD
 - **每个结论都有降级机制**：如果新闻、论文、GitHub、行情、基本面或舆情节点不足，系统会明确标 `partial / No Rating`，不会为了好看硬凑 Top 5。
 - **报告结构服务决策者，而不是服务模型炫技**：第一页永远是老板决策页，长证据放 evidence pack，既能快速读结论，也能追溯每条证据。
 - **它有复盘闭环**：研究动作进入 shadow ledger，下周用价格和 thesis 归因回看信号质量，让系统不是一次性生成器，而是会自我校准的投研流程。
-- **工程上有稳定交付设计**：LangGraph 可用时走 `StateGraph`，不可用时走本地图执行器；section 超时或数据节点失败不会拖垮整份报告。
+- **工程上有稳定交付设计**：下一步后端按 FastAPI 模块化单体重构，`server.py` 保持兼容启动入口，路由、服务、数据适配器、仓储和 SSE 事件流分层拆开，避免巨型文件拖慢调试。
 
 ## AI 产品经理面试速讲版
 
@@ -76,6 +82,7 @@ flowchart TD
 | 研报长但不可追溯 | 老板决策页 + evidence pack + 双跳证据链接 | 面向决策者的输出设计 |
 | 多 agent 容易互相重复或放大幻觉 | 每个 agent 有固定角色、输入、过滤规则、输出 schema 和禁止行为 | Agentic workflow 设计 |
 | 一次性生成无法证明长期有效 | Conclusion Pool + Paper Portfolio 做 shadow ledger 复盘 | 指标闭环和产品迭代意识 |
+| 后端逻辑堆在单文件里，后续难维护 | FastAPI 模块化单体：router / service / client / repository / schema / core 分层 | 从原型走向可维护产品架构 |
 
 ### 产品闭环流程图
 
@@ -155,7 +162,11 @@ AI 投资信息源很分散：新闻、发布会、YouTube、播客、GitHub、a
 
 ```mermaid
 flowchart TD
-    U["User Request"] --> R["Intent Router"]
+    U["User Request"] --> API["FastAPI API Layer<br/>/api/weekly-brief"]
+    API --> W["WeeklyBriefService<br/>Facade"]
+    W --> PRE["Gateway + Env Preflight"]
+    W --> DATA["Data Node Evidence Bundle"]
+    DATA --> R["Intent Router"]
     R --> D["Stock Discovery"]
     D --> I["AI Information & Sentiment"]
     I --> F["Fundamental"]
@@ -165,10 +176,43 @@ flowchart TD
     X --> C["Final Trend Narrative"]
     C --> P["Paper Portfolio & Attribution"]
     P --> Q["Weekly Brief Quality Gate"]
-    Q --> S["Skill Scout Appendix"]
+    Q --> OUT["Boss Page + Evidence Pack + Agent Trace"]
+    C --> HIST["Reports Repository"]
+    P --> POND["Pond Repository"]
+    W -.streaming.-> SSE["SSE Event Emitter"]
+    SSE --> OUT
 ```
 
 运行顺序是固定的 directed pipeline，不是 agent 圆桌讨论。任何周报、实验或单 section 研究都必须先跑 `agents/08-intent-router.md`，但发布报告必须从老板决策页开始，Route Plan 放到附录。
+
+## 后端重构目标：FastAPI 模块化单体
+
+当前后端重构目标是先把 `backend/server.py` 从巨型单文件拆成可维护的 FastAPI 模块化单体，同时保持现有启动命令和 HTTP API 行为兼容。
+
+```text
+backend/
+├── server.py                  # 兼容启动器：解析参数、加载 .env、启动 uvicorn
+└── app/
+    ├── main.py                # FastAPI app / Front Controller
+    ├── routers/               # health, weekly_brief, pond, reports
+    ├── services/              # WeeklyBriefService、workflow、报告组装、模型网关预检
+    ├── clients/               # OpenAI-compatible、Finnhub、Yahoo、GitHub、arXiv、SEC、FRED
+    ├── repositories/          # 报告历史、池塘 CSV 读写
+    ├── schemas/               # Pydantic request / response DTO
+    └── core/                  # config、env、errors、time / markdown utils
+```
+
+设计模式映射：
+
+| 模式 | 项目里的落点 | 产品价值 |
+|---|---|---|
+| Front Controller | FastAPI app + routers | 统一 HTTP 入口，替代巨型 Handler |
+| Facade | `WeeklyBriefService` | 对路由隐藏数据节点、agent workflow、history persistence 的复杂性 |
+| Strategy / Adapter | 每个外部数据 client 实现统一采集接口 | 方便替换 Finnhub、Yahoo、GitHub、arXiv、SEC 等数据源 |
+| DAO / Repository | 报告历史和池塘文件读写 | 业务逻辑和文件存储解耦，便于单测 |
+| Observer | SSE event emitter | 流式输出结构化事件，不污染最终 payload |
+
+详细方案见 [docs/backend-fastapi-refactor-plan.md](docs/backend-fastapi-refactor-plan.md)。
 
 ## 快速开始
 
@@ -274,6 +318,8 @@ PAPER_TRADING_MODE=shadow_ledger
 ├── AGENCY.md                         # Harness Agent 主运行手册
 ├── AGENTS.md                         # 项目级规则
 ├── agents/                           # 每个 agent 的系统 prompt 和用户 prompt 模板
+├── backend/                          # 本地 weekly brief API；目标重构为 FastAPI 模块化单体
+├── frontend/                         # 零依赖静态研究台
 ├── docs/                             # 系统设计、质量门槛、skill registry、配置文档
 ├── data/
 │   ├── conclusion-pool/              # 用户选择观察的结论池模板
@@ -323,6 +369,7 @@ PAPER_TRADING_MODE=shadow_ledger
 - [docs/ai-investment-agent-system.md](docs/ai-investment-agent-system.md)：系统设计。
 - [docs/research-report-output-standard.md](docs/research-report-output-standard.md)：最终报告三种结构、公开格式约束和 agent handoff 契约。
 - [docs/agent-responsibilities.md](docs/agent-responsibilities.md)：agent 职责、输入、输出和边界。
+- [docs/backend-fastapi-refactor-plan.md](docs/backend-fastapi-refactor-plan.md)：后端 FastAPI 模块化单体重构计划。
 - [docs/skill-registry.md](docs/skill-registry.md)：skill/data node 用途、降级和禁止用途。
 - [docs/weekly-brief-quality-gate.md](docs/weekly-brief-quality-gate.md)：最终周报验收标准。
 - [docs/api-configuration.md](docs/api-configuration.md)：API 和模型配置。
@@ -342,5 +389,11 @@ PAPER_TRADING_MODE=shadow_ledger
 - Top 5 Research Action Pool 规则。
 - Conclusion Pool 和 Paper Portfolio 复盘闭环。
 - Skill Scout 维护机制。
+
+下一步 `v0.5-backend-modular-monolith`：
+
+- 按 [docs/backend-fastapi-refactor-plan.md](docs/backend-fastapi-refactor-plan.md) 将后端重构为 FastAPI 模块化单体。
+- 保持 `python3 backend/server.py --host ... --port ...`、`/api/weekly-brief`、`/api/pond`、`/api/reports` 与前端兼容。
+- 把 `routers`、`services`、`clients`、`repositories`、`schemas`、`core` 分层拆清楚，再继续做 workflow debug 和数据节点增强。
 
 下一步路线见 [docs/next-experiment-and-ui-roadmap.md](docs/next-experiment-and-ui-roadmap.md)。

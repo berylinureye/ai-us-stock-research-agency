@@ -133,7 +133,24 @@ AI inference demand + hyperscaler capex + semiconductor / data center supply cha
 
 这些等 shadow ledger 跑通后再接。
 
-## 6. UI 路线图
+## 6. 后端和 UI 路线图
+
+### v0.5 Backend：FastAPI 模块化单体
+
+先做后端结构重构，再继续 debug 和能力扩展。目标不是改变研究逻辑，而是让后端更容易维护、测试和继续迭代。
+
+核心方向：
+
+- `backend/server.py` 保持兼容启动器，只负责解析参数、加载 `.env`、启动 `uvicorn`。
+- 新建 `backend/app/`，拆分 `routers`、`services`、`clients`、`repositories`、`schemas`、`core`。
+- 路由分组保持前端兼容：`health`、`weekly_brief`、`pond`、`reports`。
+- `WeeklyBriefService` 作为 Facade，统一编排 data nodes、agent workflow、report history 和 pond persistence。
+- SSE streaming 统一走 event emitter，让 Agent Visible Trace 是结构化事件，不污染最终报告 payload。
+- 所有后端 Python 文件目标保持 `<2000` 行。
+
+详细方案见 [backend-fastapi-refactor-plan.md](backend-fastapi-refactor-plan.md)。
+
+### UI 路线图
 
 UI 可以做，但建议作为第二阶段。
 
