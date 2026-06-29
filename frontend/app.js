@@ -26,7 +26,6 @@
   ];
 
   const THINKING_WORDS = ["研判中", "检索证据", "校验链路", "形成周报"];
-  const ESTIMATED_RUN_MS = 12 * 60 * 1000;
   const TRACE_AGENT_DEFAULTS = {
     "Intent Router": {
       thinking: "我先判断这次请求属于哪些任务、哪些 agent 应该运行，以及哪些数据节点缺失。",
@@ -521,7 +520,7 @@
   function resetRunProgress() {
     setRunProgress(0);
     els.progressElapsed.textContent = "00:00";
-    els.progressEstimate.textContent = "预计 12:00";
+    els.progressEstimate.textContent = "正在运行";
   }
 
   function completeRunProgress() {
@@ -535,11 +534,10 @@
   function updateRunProgress() {
     if (!state.runStartedAt) return resetRunProgress();
     const elapsedMs = Date.now() - state.runStartedAt.getTime();
-    const percent = Math.max(Math.min((elapsedMs / ESTIMATED_RUN_MS) * 100, 99), 2);
-    const remainingMs = Math.max(ESTIMATED_RUN_MS - elapsedMs, 0);
+    const percent = Math.max(Math.min(2 + Math.log1p(elapsedMs / 1000) * 14, 95), 2);
     setRunProgress(percent);
     els.progressElapsed.textContent = formatDuration(elapsedMs);
-    els.progressEstimate.textContent = remainingMs ? `预计剩余 ${formatDuration(remainingMs)}` : "超过 12 分钟，继续收尾";
+    els.progressEstimate.textContent = "正在运行";
   }
 
   function setRunProgress(percent) {
@@ -1360,7 +1358,10 @@
     const title = String(payload.title || "");
     const report = String(payload.reportMarkdown || "");
     const firstScreen = report.slice(0, 1200);
-    if (/研究未完成/i.test(title) || /^#\s*研究未完成/im.test(report) || /后端运行失败/i.test(firstScreen)) return "failed";
+    if (/研究未完成/i.test(title) || /^#\s*研究未完成/im.test(report)) return "failed";
+    if (Array.isArray(payload.researchActionPool) && payload.researchActionPool.length) return "complete";
+    if (/后端运行失败/i.test(firstScreen)) return "failed";
+    if (/(section\s*状态|状态)\s*[:：]\s*`?\s*failed/i.test(report)) return "partial";
     if (/partial|缺口|未接入|数据节点不足|failed/i.test(report)) return "partial";
     return "complete";
   }

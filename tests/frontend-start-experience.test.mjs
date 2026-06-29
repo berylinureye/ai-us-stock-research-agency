@@ -53,8 +53,13 @@ assert.match(
 );
 assert.match(
   html,
-  /class="run-progress"[\s\S]*预计 12:00[\s\S]*id="progressFill"/,
-  "running view should include the 12-minute estimate progress bar"
+  /class="run-progress"[\s\S]*正在运行[\s\S]*id="progressFill"/,
+  "running view should show live progress without a fixed 12-minute estimate"
+);
+assert.doesNotMatch(
+  html,
+  /预计 12:00/,
+  "running view should not promise a fixed 12-minute duration"
 );
 assert.match(
   html,
@@ -88,23 +93,23 @@ assert.match(
 );
 assert.match(
   html,
-  /href="\.\/styles\.css\?v=\d{8}-streamdone"/,
+  /href="\.\/styles\.css\?v=\d{8}-[a-z0-9-]+"/,
   "stylesheet should be cache-busted so stale UI styles do not survive local reloads"
 );
 assert.match(
   html,
-  /src="\.\/app\.js\?v=\d{8}-streamdone"/,
+  /src="\.\/app\.js\?v=\d{8}-[a-z0-9-]+"/,
   "app script should be cache-busted so stale initialization code cannot survive local reloads"
 );
 assert.match(
   html,
-  /class="pond-preview-visual"[\s\S]*assets\/pond-watch\.svg\?v=\d{8}-streamdone/,
+  /class="pond-preview-visual"[\s\S]*assets\/pond-watch\.svg\?v=\d{8}-[a-z0-9-]+/,
   "pond preview should include a local visual asset instead of being a text-only strip"
 );
-assert.match(
+assert.doesNotMatch(
   js,
-  /ESTIMATED_RUN_MS\s*=\s*12\s*\*\s*60\s*\*\s*1000/,
-  "running progress should use a 12-minute timer estimate"
+  /ESTIMATED_RUN_MS|预计剩余|超过 12 分钟/,
+  "running progress should avoid virtual fixed-duration countdown text"
 );
 assert.match(
   js,
@@ -121,6 +126,24 @@ assert.match(
   /raw-section-disclosure/,
   "raw section markdown should be available only behind a disclosure"
 );
+assert.match(
+  js,
+  /function reportStatusFromPayload[\s\S]*researchActionPool[\s\S]*return "complete"/,
+  "frontend status should treat reports with structured candidates as complete even when they mention data gaps"
+);
+{
+  const statusFunction = js.match(/function reportStatusFromPayload\(payload\) \{[\s\S]*?\n  \}/)?.[0] || "";
+  const topLevelFailureIndex = statusFunction.indexOf("研究未完成");
+  const actionPoolIndex = statusFunction.indexOf("researchActionPool");
+  const sectionFailureIndex = statusFunction.indexOf("section\\s*状态");
+  assert.ok(topLevelFailureIndex >= 0, "frontend status should still detect top-level backend failure");
+  assert.ok(actionPoolIndex >= 0, "frontend status should inspect structured candidates");
+  assert.ok(sectionFailureIndex >= 0, "frontend status should still inspect failed section appendices");
+  assert.ok(
+    topLevelFailureIndex < actionPoolIndex && actionPoolIndex < sectionFailureIndex,
+    "structured candidates should be checked after top-level failure but before appendix section-failed text"
+  );
+}
 assert.match(
   js,
   /publicThinkingPreview\(trace\)/,

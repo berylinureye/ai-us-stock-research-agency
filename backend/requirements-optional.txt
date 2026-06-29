@@ -1,0 +1,2 @@
+# Optional: used when installed, otherwise backend falls back to local graph execution.
+langgraph>=0.2,<1

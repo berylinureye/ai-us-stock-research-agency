@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import backend.server as server
+from backend.app.core import config
 
 
 class BackendEnvLoadingTest(unittest.TestCase):
@@ -21,7 +21,7 @@ class BackendEnvLoadingTest(unittest.TestCase):
             env_path = Path(tmp) / ".env"
             env_path.write_text("OPENAI_API_KEY=test-dotenv-good-key\n", encoding="utf-8")
 
-            server.load_env_file(env_path)
+            config.load_env_file(env_path)
 
         self.assertEqual(os.environ["OPENAI_API_KEY"], "test-dotenv-good-key")
 
