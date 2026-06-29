@@ -20,6 +20,7 @@
 | 文档 | 内容 |
 |---|---|
 | [ai-investment-agent-system.md](ai-investment-agent-system.md) | 系统原则、Agent pipeline、skill/data node 使用方式 |
+| [langgraph-orchestration.md](langgraph-orchestration.md) | LangGraph / StateGraph 如何做意图路由、状态管理和条件编排 |
 | [agent-visible-trace.md](agent-visible-trace.md) | 前端展示公开 Agent Trace 的 schema 和边界 |
 | [noise-control-and-paper-portfolio-loop.md](noise-control-and-paper-portfolio-loop.md) | 控噪、Conclusion Pool、Paper Portfolio 复盘闭环 |
 | [backend-fastapi-refactor-plan.md](backend-fastapi-refactor-plan.md) | 后端 FastAPI 模块化单体重构目标 |

@@ -158,6 +158,7 @@ http://127.0.0.1:5173
 | [AGENTS.md](AGENTS.md) | 项目级规则和安全边界 |
 | [agents/README.md](agents/README.md) | Agent prompt 索引 |
 | [docs/README.md](docs/README.md) | 文档地图 |
+| [docs/langgraph-orchestration.md](docs/langgraph-orchestration.md) | LangGraph / StateGraph 编排层说明 |
 | [docs/agent-responsibilities.md](docs/agent-responsibilities.md) | Agent 职责、输入、输出、边界 |
 | [docs/research-report-output-standard.md](docs/research-report-output-standard.md) | 最终报告格式和双跳证据规范 |
 | [docs/weekly-brief-quality-gate.md](docs/weekly-brief-quality-gate.md) | 周报质量门槛 |
